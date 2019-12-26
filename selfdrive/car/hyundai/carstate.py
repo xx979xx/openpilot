@@ -71,7 +71,7 @@ def get_can_parser(CP):
     ("WHL_SPD11", 50),
     ("SAS11", 100)
   ]
-  if not CP.mdps_bus:
+  if not CP.mdpsBus:
     signals += [
     ("CR_Mdps_StrColTq", "MDPS12", 0),
     ("CF_Mdps_Def", "MDPS12", 0),
@@ -93,7 +93,7 @@ def get_can_parser(CP):
       ("CRUISE_LAMP_M", "EMS16", 0),
       ("CF_Lvr_CruiseSet", "LVR12", 0),
     ]
-  elif not CP.scc_bus:
+  elif not CP.sccBus:
     signals += [
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
@@ -152,7 +152,7 @@ def get_can_parser(CP):
 def get_can2_parser(CP):
   signals = []
   checks = []
-  if CP.mdps_bus == 1:
+  if CP.mdpsBus == 1:
     signals += [
     ("CR_Mdps_StrColTq", "MDPS12", 0),
     ("CF_Mdps_Def", "MDPS12", 0),
@@ -169,7 +169,7 @@ def get_can2_parser(CP):
     checks += [
       ("MDPS12", 50)
     ]
-  if CP.carFingerprint not in FEATURES["non_scc"] and CP.scc_bus == 1:
+  if CP.carFingerprint not in FEATURES["non_scc"] and CP.sccBus == 1:
     signals += [
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
@@ -228,7 +228,7 @@ def get_camera_parser(CP):
   ]
 
   checks = []
-  if CP.carFingerprint not in FEATURES["non_scc"] and CP.scc_bus == 2:
+  if CP.carFingerprint not in FEATURES["non_scc"] and CP.sccBus == 2:
     signals += [
       ("MainMode_ACC", "SCC11", 0),
       ("VSetDis", "SCC11", 0),
@@ -288,8 +288,8 @@ class CarState():
     self.right_blinker_on = 0
     self.right_blinker_flash = 0
     self.no_radar = CP.carFingerprint in FEATURES["non_scc"]
-    self.mdps_bus = CP.mdps_bus
-    self.scc_bus = CP.scc_bus
+    self.mdps_bus = CP.mdpsBus
+    self.scc_bus = CP.sccBus
 
   def update(self, cp, cp2, cp_cam):
 
