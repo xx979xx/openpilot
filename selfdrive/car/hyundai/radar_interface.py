@@ -5,9 +5,8 @@ from cereal import car
 from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.car.hyundai.values import DBC, FEATURES
-from selfdrive.car.hyundai.carstate import CarState
 
-def get_radar_can_parser(CP, bus):
+def get_radar_can_parser(CP):
   signals = [
     # sig_name, sig_address, default
     ("ACC_ObjStatus", "SCC11", 0),
@@ -17,7 +16,7 @@ def get_radar_can_parser(CP, bus):
     ("TauGapSet", "SCC11", 0),
   ]
   checks = []
-  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, bus)
+  return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CP.scc_bus)
 
 
 class RadarInterface(RadarInterfaceBase):
@@ -29,8 +28,7 @@ class RadarInterface(RadarInterfaceBase):
     self.trigger_msg = 0x420
     self.track_id = 0
     self.no_radar = CP.carFingerprint in FEATURES["non_scc"]
-    self.radar_bus = CarState(CP).scc_bus
-    self.rcp = get_radar_can_parser(CP, self.radar_bus)
+    self.rcp = get_radar_can_parser(CP)
 
   def update(self, can_strings):
     if self.no_radar:
