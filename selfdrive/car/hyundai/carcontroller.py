@@ -90,9 +90,10 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     ### LKAS button to temporarily disable steering
-    if not CS.lkas_error and CS.lkas_button_on != self.lkas_button_last:
-      self.lkas_button = not self.lkas_button
-    self.lkas_button_last = self.lkas_button
+    if not CS.lkas_error:
+      if CS.lkas_button_on != self.lkas_button_last:
+        self.lkas_button = not self.lkas_button
+      self.lkas_button_last = CS.lkas_button_on
 
     lkas_active = enabled and abs(CS.angle_steers) < 90. and self.lkas_button
 
