@@ -144,7 +144,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     }
 
     // reset to 0 if either controls is not allowed or there's a violation
-    if (violation || !controls_allowed) {
+    if (!controls_allowed) { // a reset worsen the issue of Panda blocking some valid LKAS messages
       hyundai_desired_torque_last = 0;
       hyundai_rt_torque_last = 0;
       hyundai_ts_last = ts;
