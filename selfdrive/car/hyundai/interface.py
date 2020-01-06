@@ -276,7 +276,7 @@ class CarInterface(CarInterfaceBase):
       self.low_speed_alert = False
 
     # turning indicator alert logic
-    self.turning_indicator_alert = True if (self.CS.left_blinker_on or self.CS.right_blinker_on) and self.CS.v_ego < 16.7 else False
+    self.turning_indicator_alert = True if self.CC.turning_signal_timer and self.CS.v_ego < 16.7 else False
 
     # LKAS button alert logic
     self.lkas_button_alert = True if not self.CC.lkas_button else False
