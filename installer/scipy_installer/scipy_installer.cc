@@ -120,7 +120,7 @@ struct Updater {
     system("mount -o rw,remount /data");
 
     fb = framebuffer_init("updater", 0x00001000, false,
-                          &fb_w, &fb_h);
+                          &display, &surface, &fb_w, &fb_h);
     assert(fb);
 
     vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
