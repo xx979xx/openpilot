@@ -144,7 +144,7 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
     
     if not enabled:
-	    apply_steer = 0
+      apply_steer = 0
       apply_steer_req = 0
 
     self.steer_angle_enabled, self.ipas_reset_counter = \
