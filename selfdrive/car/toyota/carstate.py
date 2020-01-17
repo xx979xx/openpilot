@@ -90,7 +90,7 @@ def get_cam_can_parser(CP):
 
   signals = [
     ("FORCE", "PRE_COLLISION", 0), 
-    ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0)
+    ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0),
     ("TSGN1", "RSA1", 0),
     ("SPDVAL1", "RSA1", 0),
     ("SPLSGN1", "RSA1", 0),
