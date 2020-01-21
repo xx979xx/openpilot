@@ -1,4 +1,3 @@
-import os
 import math
 from common.realtime import sec_since_boot, DT_MDL
 from selfdrive.swaglog import cloudlog
@@ -12,7 +11,6 @@ from cereal import log
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 
-LOG_MPC = os.environ.get('LOG_MPC', False)
 
 LANE_CHANGE_SPEED_MIN = 45 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
@@ -219,7 +217,6 @@ class PathPlanner():
 
     pm.send('pathPlan', plan_send)
 
-    if LOG_MPC:
       dat = messaging.new_message()
       dat.init('liveMpc')
       dat.liveMpc.x = list(self.mpc_solution[0].x)
