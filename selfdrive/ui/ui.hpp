@@ -85,7 +85,9 @@ typedef struct UIScene {
   uint64_t v_cruise_update_ts;
   float v_ego;
   bool decel_for_model;
-
+  
+  float angleSteers;
+  
   float speedlimit;
   float speedlimitaheaddistance;
   bool speedlimitahead_valid;
