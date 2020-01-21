@@ -17,6 +17,7 @@ from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 offset = 0
 osm = True
 MAX_SPEED = 255.0
+NO_CURVATURE_SPEED = 90.0
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 MAX_SPEED_ERROR = 2.0
@@ -150,6 +151,9 @@ class Planner():
     else:
       model_speed = MAX_SPEED
       
+    v_speedlimit = NO_CURVATURE_SPEED
+    v_curvature_map = NO_CURVATURE_SPEED
+    v_speedlimit_ahead = NO_CURVATURE_SPEED
     now = datetime.now()  
     try:
       if sm['liveMapData'].speedLimitValid and osm and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
