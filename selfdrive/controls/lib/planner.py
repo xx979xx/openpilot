@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 from datetime import datetime
+import time
 import numpy as np
 from common.params import Params
 from common.numpy_fast import interp
@@ -150,7 +151,7 @@ class Planner():
       model_speed = max(20.0 * CV.MPH_TO_MS, model_speed) # Don't slow down below 20mph
     else:
       model_speed = MAX_SPEED
-      
+    speed_ahead_distance = 250
     v_speedlimit = NO_CURVATURE_SPEED
     v_curvature_map = NO_CURVATURE_SPEED
     v_speedlimit_ahead = NO_CURVATURE_SPEED
