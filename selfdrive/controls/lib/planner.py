@@ -15,7 +15,7 @@ from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
-offset = 0
+offset = 4.47
 osm = True
 MAX_SPEED = 255.0
 NO_CURVATURE_SPEED = 90.0
