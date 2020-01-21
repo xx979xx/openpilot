@@ -1,3 +1,4 @@
+import math
 from cereal import car
 from common.numpy_fast import mean
 import cereal.messaging_arne as messaging_arne
