@@ -11,7 +11,6 @@ from cereal import log
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 
-LOG_MPC = os.environ.get('LOG_MPC', True)
 
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
@@ -219,11 +218,11 @@ class PathPlanner():
     pm.send('pathPlan', plan_send)
 
      
-      dat = messaging.new_message()
-      dat.init('liveMpc')
-      dat.liveMpc.x = list(self.mpc_solution[0].x)
-      dat.liveMpc.y = list(self.mpc_solution[0].y)
-      dat.liveMpc.psi = list(self.mpc_solution[0].psi)
-      dat.liveMpc.delta = list(self.mpc_solution[0].delta)
-      dat.liveMpc.cost = self.mpc_solution[0].cost
-      pm.send('liveMpc', dat)
+    dat = messaging.new_message()
+    dat.init('liveMpc')
+    dat.liveMpc.x = list(self.mpc_solution[0].x)
+    dat.liveMpc.y = list(self.mpc_solution[0].y)
+    dat.liveMpc.psi = list(self.mpc_solution[0].psi)
+    dat.liveMpc.delta = list(self.mpc_solution[0].delta)
+    dat.liveMpc.cost = self.mpc_solution[0].cost
+    pm.send('liveMpc', dat)
