@@ -20,7 +20,6 @@
 #include "ui.hpp"
 #include "sound.hpp"
 
-#define SHOW_SPEEDLIMIT 1
 
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
@@ -420,6 +419,10 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_LiveMapData datad;
     cereal_read_LiveMapData(&datad, eventd.liveMapData);
     s->scene.map_valid = datad.mapValid;
+    s->scene.speedlimit = datad.speedLimit;
+    s->scene.speedlimitahead_valid = datad.speedLimitAheadValid;
+    s->scene.speedlimitaheaddistance = datad.speedLimitAheadDistance;
+    s->scene.speedlimit_valid = datad.speedLimitValid;
   }
   capn_free(&ctx);
 }
