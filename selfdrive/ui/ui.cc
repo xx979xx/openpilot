@@ -20,6 +20,8 @@
 #include "ui.hpp"
 #include "sound.hpp"
 
+#define SHOW_SPEEDLIMIT 1
+
 static int last_brightness = -1;
 static void set_brightness(UIState *s, int brightness) {
   if (last_brightness != brightness && (s->awake || brightness == 0)) {
