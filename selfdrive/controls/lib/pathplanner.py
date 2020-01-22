@@ -166,7 +166,6 @@ class PathPlanner():
     #   self.path_offset_i = 0.0
 
     # account for actuation delay
-    angle_offset = (float(sm['liveParameters'].angleOffset), lane_change_direction, self.lane_change_state)
     self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
