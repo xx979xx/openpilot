@@ -8,7 +8,7 @@ from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
 from cereal import log
 from common.op_params import opParams
-from common.travis_checker import travis
+#from common.travis_checker import travis
 
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
