@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
-
+    self.keep_openpilot_engaged = True
     # *** init the major players ***
     self.CS = CarState(CP)
 
