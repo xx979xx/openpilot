@@ -57,6 +57,8 @@ class PathPlanner():
     self.lane_change_state = LaneChangeState.off
     self.lane_change_timer = 0.0
     self.prev_one_blinker = False
+    
+    self.op_params = opParams()
     self.alca_nudge_required = self.op_params.get('alca_nudge_required', default=True)
     self.alca_min_speed = self.op_params.get('alca_min_speed', default=20.0)
 
@@ -164,7 +166,7 @@ class PathPlanner():
     #   self.path_offset_i = 0.0
 
     # account for actuation delay
-    angle_offset = self.lane_hugging.modify_offset(float(sm['liveParameters'].angleOffset), lane_change_direction, self.lane_change_state)
+    angle_offset = (float(sm['liveParameters'].angleOffset), lane_change_direction, self.lane_change_state)
     self.cur_state = calc_states_after_delay(self.cur_state, v_ego, angle_steers - angle_offset, curvature_factor, VM.sR, CP.steerActuatorDelay)
 
     v_ego_mpc = max(v_ego, 5.0)  # avoid mpc roughness due to low speed
@@ -213,7 +215,7 @@ class PathPlanner():
 
     plan_send.pathPlan.angleSteers = float(self.angle_steers_des_mpc)
     plan_send.pathPlan.rateSteers = float(rate_desired)
-    plan_send.pathPlan.angleOffset = plan_send.pathPlan.angleOffset (float(sm['liveParameters'].angleOffsetAverage),lane_change_direction, self.lane_change_state)
+    plan_send.pathPlan.angleOffset = float(sm['liveParameters'].angleOffsetAverage),lane_change_direction, self.lane_change_state
     plan_send.pathPlan.mpcSolutionValid = bool(plan_solution_valid)
     plan_send.pathPlan.paramsValid = bool(sm['liveParameters'].valid)
     plan_send.pathPlan.sensorValid = bool(sm['liveParameters'].sensorValid)
