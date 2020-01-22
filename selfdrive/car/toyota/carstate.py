@@ -124,6 +124,7 @@ class CarState():
     self.init_angle_offset = False
     self.v_cruise_pcmlast = 41.0
     self.setspeedoffset = 34.0
+    self.setspeedcounter = 0
     
     if not travis:
       self.arne_pm = messaging_arne.PubMaster(['liveTrafficData', 'arne182Status'])
