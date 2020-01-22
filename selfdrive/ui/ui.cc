@@ -276,6 +276,7 @@ void handle_message(UIState *s, Message * msg) {
     }
     s->scene.v_cruise = datad.vCruise;
     s->scene.v_ego = datad.vEgo;
+    s->scene.angleSteers = datad.angleSteers;
     s->scene.curvature = datad.curvature;
     s->scene.engaged = datad.enabled;
     s->scene.engageable = datad.engageable;
