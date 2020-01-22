@@ -207,7 +207,8 @@ class CarState():
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
-
+    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
+    
     self.user_brake = 0
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       self.v_cruise_pcm = cp.vl["DSU_CRUISE"]['SET_SPEED']
@@ -250,7 +251,7 @@ class CarState():
 
     self.v_cruise_pcm = min(max(7, int(self.v_cruise_pcm) - self.setspeedoffset),169)
 
-    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
+    
     self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     if self.CP.carFingerprint == CAR.PRIUS:
