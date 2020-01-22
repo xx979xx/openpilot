@@ -5,11 +5,11 @@ const int TOYOTA_MAX_TORQUE = 1500;       // max torque cmd allowed ever
 // packet is sent at 100hz, so this limit is 1000/sec
 const int TOYOTA_MAX_RATE_UP = 10;        // ramp up slow
 const int TOYOTA_MAX_RATE_DOWN = 44;      // ramp down fast
-const int TOYOTA_MAX_TORQUE_ERROR = 350;  // max torque cmd in excess of torque motor
+const int TOYOTA_MAX_TORQUE_ERROR = 500;  // max torque cmd in excess of torque motor
 
 // real time torque limit to prevent controls spamming
 // the real time limit is 1500/sec
-const int TOYOTA_MAX_RT_DELTA = 475;      // max delta torque allowed for real time checks
+const int TOYOTA_MAX_RT_DELTA = 375;      // max delta torque allowed for real time checks
 const uint32_t TOYOTA_RT_INTERVAL = 250000;    // 250ms between real time checks
 
 // longitudinal limits
@@ -89,7 +89,7 @@ static int toyota_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
     // enter controls on rising edge of ACC, exit controls on ACC off
     if (addr == 0x1D3) {
-      // 5th bit is MAIN_ON
+      // 15th bit is MAIN_ON
       int cruise_engaged = GET_BYTE(to_push, 1) >> 7;
       if (!cruise_engaged) {
         controls_allowed = 0;
@@ -177,28 +177,28 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
       uint32_t ts = TIM2->CNT;
 
-      if (controls_allowed) {
+      
 
-        // *** global torque limit check ***
-        violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
+      // *** global torque limit check ***
+      violation |= max_limit_check(desired_torque, TOYOTA_MAX_TORQUE, -TOYOTA_MAX_TORQUE);
 
-        // *** torque rate limit check ***
-        violation |= dist_to_meas_check(desired_torque, toyota_desired_torque_last,
-          &toyota_torque_meas, TOYOTA_MAX_RATE_UP, TOYOTA_MAX_RATE_DOWN, TOYOTA_MAX_TORQUE_ERROR);
+      // *** torque rate limit check ***
+      violation |= dist_to_meas_check(desired_torque, toyota_desired_torque_last,
+        &toyota_torque_meas, TOYOTA_MAX_RATE_UP, TOYOTA_MAX_RATE_DOWN, TOYOTA_MAX_TORQUE_ERROR);
 
-        // used next time
-        toyota_desired_torque_last = desired_torque;
+      // used next time
+      toyota_desired_torque_last = desired_torque;
 
-        // *** torque real time rate limit check ***
-        violation |= rt_rate_limit_check(desired_torque, toyota_rt_torque_last, TOYOTA_MAX_RT_DELTA);
+      // *** torque real time rate limit check ***
+      violation |= rt_rate_limit_check(desired_torque, toyota_rt_torque_last, TOYOTA_MAX_RT_DELTA);
 
-        // every RT_INTERVAL set the new limits
-        uint32_t ts_elapsed = get_ts_elapsed(ts, toyota_ts_last);
-        if (ts_elapsed > TOYOTA_RT_INTERVAL) {
-          toyota_rt_torque_last = desired_torque;
-          toyota_ts_last = ts;
-        }
+      // every RT_INTERVAL set the new limits
+      uint32_t ts_elapsed = get_ts_elapsed(ts, toyota_ts_last);
+      if (ts_elapsed > TOYOTA_RT_INTERVAL) {
+        toyota_rt_torque_last = desired_torque;
+        toyota_ts_last = ts;
       }
+    
 
       // no torque if controls is not allowed
       if (!controls_allowed) {
@@ -210,7 +210,7 @@ static int toyota_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       }
 
       // reset to 0 if either controls is not allowed or there's a violation
-      if (violation || !controls_allowed) {
+      if (violation) {
         toyota_desired_torque_last = 0;
         toyota_rt_torque_last = 0;
         toyota_ts_last = ts;
