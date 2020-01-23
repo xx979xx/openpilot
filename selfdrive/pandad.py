@@ -75,7 +75,7 @@ def update_panda():
     fw_signature.hex(),
   ))
 
-  if panda.bootstub or not current_version.startswith(repo_version):# or panda_signature != fw_signature:
+  if panda.bootstub or not panda_version.startswith(repo_version):# or panda_signature != fw_signature:
     cloudlog.info("Panda firmware out of date, update required")
     panda.flash()
     cloudlog.info("Done flashing")
