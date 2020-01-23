@@ -281,7 +281,7 @@ def thermald_thread():
     accepted_terms = params.get("HasAcceptedTerms") == terms_version
     completed_training = params.get("CompletedTrainingVersion") == training_version
 
-    panda_signature = params.get("PandaFirmware")
+    panda_signature = params.get("PandaFirmware", encoding="utf8")
     fw_version_match = (panda_signature is None) or (panda_signature.startswith(FW_SIGNATURE) )   # don't show alert is no panda is connected (None)
 
     should_start = ignition
