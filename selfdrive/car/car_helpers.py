@@ -75,10 +75,8 @@ def fingerprint(logcan, sendcan, has_relay):
     cached_fingerprint = None
     
   if car_params is not None:
-    # use already stored VIN: a new VIN query cannot be done, since panda isn't in ELM327 mode
     car_params = car.CarParams.from_bytes(car_params)
-    vin = VIN_UNKNOWN if car_params.carVin == "" else car_params.carVin
-  elif has_relay:
+  if has_relay:
     # Vin query only reliably works thorugh OBDII
     bus = 1
     addr, vin = get_vin(logcan, sendcan, bus)
