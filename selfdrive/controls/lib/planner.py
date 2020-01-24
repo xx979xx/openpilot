@@ -15,8 +15,11 @@ from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
-offset = 4.47
-osm = True
+from common.op_params import opParams
+op_params = opParams()
+offset = op_params.get('speed_offset', 0) # m/s
+osm = op_params.get('osm', True)
+
 MAX_SPEED = 255.0
 NO_CURVATURE_SPEED = 90.0
 
@@ -91,12 +94,23 @@ class Planner():
     self.params = Params()
     self.first_loop = True
 
-  def choose_solution(self, v_cruise_setpoint, enabled):
+  def choose_solution(self, v_cruise_setpoint, enabled, lead_1, lead_2, steeringAngle):
+    center_x = -2.5 # Wheel base 2.5m
+    lead1_check = True
+    lead2_check = True
+    if steeringAngle > 100: # only at high angles
+      center_y = -1+2.5/math.tan(steeringAngle/1800.*math.pi) # Car Width 2m. Left side considered in left hand turn
+      lead1_check = math.sqrt((lead_1.dRel-center_x)**2+(lead_1.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngle/1800.*math.pi))+1. # extra meter clearance to car
+      lead2_check = math.sqrt((lead_2.dRel-center_x)**2+(lead_2.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngle/1800.*math.pi))+1.
+    elif steeringAngle < -100: # only at high angles
+      center_y = +1+2.5/math.tan(steeringAngle/1800.*math.pi) # Car Width 2m. Right side considered in right hand turn
+      lead1_check = math.sqrt((lead_1.dRel-center_x)**2+(lead_1.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngle/1800.*math.pi))+1.
+      lead2_check = math.sqrt((lead_2.dRel-center_x)**2+(lead_2.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngle/1800.*math.pi))+1.
     if enabled:
       solutions = {'model': self.v_model, 'cruise': self.v_cruise}
-      if self.mpc1.prev_lead_status:
+      if self.mpc1.prev_lead_status and lead1_check:
         solutions['mpc1'] = self.mpc1.v_mpc
-      if self.mpc2.prev_lead_status:
+      if self.mpc2.prev_lead_status and lead2_check:
         solutions['mpc2'] = self.mpc2.v_mpc
 
       slowest = min(solutions, key=solutions.get)
@@ -116,7 +130,11 @@ class Planner():
         self.v_acc = self.v_model
         self.a_acc = self.a_model
 
-    self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
+    self.v_acc_future = v_cruise_setpoint
+    if lead1_check:
+      self.v_acc_future = min([self.mpc1.v_mpc_future, self.v_acc_future])
+    if lead2_check:
+      self.v_acc_future = min([self.mpc2.v_mpc_future, self.v_acc_future])
 
   def update(self, sm, pm, CP, VM, PP):
     """Gets called when new radarState is available"""
@@ -187,11 +205,11 @@ class Planner():
         curvature = abs(sm['liveMapData'].curvature)
         radius = 1/max(1e-4, curvature)
         if radius > 500:
-          c=0.7 # 0.7 at 1000m = 95 kph
+          c=0.9 # 0.9 at 1000m = 108 kph
         elif radius > 250: 
-          c = 2.7-1/250*radius # 1.7 at 264m 76 kph
+          c = 3.5-13/2500*radius # 2.2 at 250m 84 kph
         else:
-          c= 3.0 - 13/2500 *radius # 3.0 at 15m 24 kph
+          c= 3.0 - 2/625 *radius # 3.0 at 15m 24 kph
         v_curvature_map = math.sqrt(c*radius)
         v_curvature_map = min(NO_CURVATURE_SPEED, v_curvature_map)
     except KeyError:
@@ -254,7 +272,7 @@ class Planner():
     self.mpc1.update(pm, sm['carState'], lead_1, v_cruise_setpoint)
     self.mpc2.update(pm, sm['carState'], lead_2, v_cruise_setpoint)
 
-    self.choose_solution(v_cruise_setpoint, enabled)
+    self.choose_solution(v_cruise_setpoint, enabled, lead_1, lead_2, sm['carState'].steeringAngle)
 
     # determine fcw
     if self.mpc1.new_lead:

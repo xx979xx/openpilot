@@ -7,6 +7,8 @@ from selfdrive.controls.lib.lane_planner import LanePlanner
 from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
 from cereal import log
+from common.op_params import opParams
+#from common.travis_checker import travis
 
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
@@ -55,6 +57,10 @@ class PathPlanner():
     self.lane_change_state = LaneChangeState.off
     self.lane_change_timer = 0.0
     self.prev_one_blinker = False
+    
+    self.op_params = opParams()
+    self.alca_nudge_required = self.op_params.get('alca_nudge_required', default=True)
+    self.alca_min_speed = self.op_params.get('alca_min_speed', default=20.0)
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -89,7 +95,7 @@ class PathPlanner():
     # Lane change logic
     lane_change_direction = LaneChangeDirection.none
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
-    below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
+    below_lane_change_speed = v_ego < self.alca_min_speed * CV.MPH_TO_MS
 
     if not active or self.lane_change_timer > LANE_CHANGE_TIME_MAX:
       self.lane_change_state = LaneChangeState.off
@@ -99,9 +105,12 @@ class PathPlanner():
       elif sm['carState'].rightBlinker:
         lane_change_direction = LaneChangeDirection.right
 
-      torque_applied = sm['carState'].steeringPressed and \
-                       ((sm['carState'].steeringTorque > 0 and lane_change_direction == LaneChangeDirection.left) or \
-                        (sm['carState'].steeringTorque < 0 and lane_change_direction == LaneChangeDirection.right))
+      if self.alca_nudge_required:
+        torque_applied = sm['carState'].steeringPressed and \
+                         ((sm['carState'].steeringTorque > 0 and lane_change_direction == LaneChangeDirection.left) or \
+                          (sm['carState'].steeringTorque < 0 and lane_change_direction == LaneChangeDirection.right))
+      else:
+        torque_applied = True
 
       lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
 
