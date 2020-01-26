@@ -27,6 +27,8 @@ def get_can_parser(CP):
     # sig_name, sig_address, default
     ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
     ("GEAR", "GEAR_PACKET", 0),
+    ("SPORT_ON", "GEAR_PACKET", 0),
+    ("ECON_ON", "GEAR_PACKET", 0),
     ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
     ("GAS_PEDAL", "GAS_PEDAL", 0),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
@@ -191,6 +193,25 @@ class CarState():
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
+    try:
+      self.econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
+    except:
+      self.econ_on = 0
+    try:
+      self.sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
+    except:
+      self.sport_on = 0
+    if self.sport_on == 1:
+      self.gasbuttonstatus = 1
+    if self.econ_on == 1:
+      self.gasbuttonstatus = 2
+    if self.sport_on == 0 and self.econ_on == 0:
+      self.gasbuttonstatus = 0
+    msg = messaging_arne.new_message()
+    msg.init('arne182Status')
+    msg.arne182Status.gasbuttonstatus = self.gasbuttonstatus
+    if not travis:
+      self.arne_pm.send('arne182Status', msg)
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       self.main_on = cp.vl["DSU_CRUISE"]['MAIN_ON']
     else:
