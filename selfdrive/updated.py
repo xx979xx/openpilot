@@ -38,7 +38,7 @@ from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 from common.op_params import opParams
-import selfdrive.messaging as messaging
+import cereal.messaging as messaging
 
 op_params = opParams()
 
