@@ -301,7 +301,7 @@ def attempt_update(time_offroad, need_reboot):
 
 def auto_update_reboot(time_offroad, need_reboot, new_version):
   min_reboot_time = 10.
-  if new_version and auto_update:
+  if new_version and auto_update and not os.path.isfile("/data/no_ota_updates"):
     try:
       if 'already up to date' not in run(NICE_LOW_PRIORITY + ["git", "pull"]).lower():
         need_reboot = True
