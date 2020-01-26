@@ -102,16 +102,6 @@ class CarController():
     if CS.v_ego < 16.7 and self.car_fingerprint == CAR.GENESIS and not CS.mdps_bus:
       lkas_active = 0
 
-    # Disable steering while turning blinker on and speed below 60 kph
-    if CS.left_blinker_on or CS.right_blinker_on:
-      if self.car_fingerprint not in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
-        self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
-      elif CS.left_blinker_flash or CS.right_blinker_flash: # Optima has blinker flash signal only
-        self.turning_signal_timer = 100
-    if self.turning_signal_timer and CS.v_ego < 16.7:
-      lkas_active = 0
-    if self.turning_signal_timer:
-      self.turning_signal_timer -= 1
     if not lkas_active:
       apply_steer = 0
 
