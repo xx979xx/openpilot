@@ -12,7 +12,7 @@ https://www.youtube.com/c/ku7tech
 
 Changes:
 ------
-- <b> Active Blindspot monitoring + LCA </b> credit to @Kylegreenlaw: During lane change events, if blind spot is activated, it will prevent you from changeing lanes. If lane change requested and vehicle enters blindspot after, LCA will turn off and pull you back to the previous lane. To override simply nudge the steering wheel twice! 
+- <b> Active Blindspot monitoring + LCA: </b> credit to @Kylegreenlaw: During lane change events, if blind spot is activated, it will prevent you from changeing lanes. If lane change requested and vehicle enters blindspot after, LCA will turn off and pull you back to the previous lane. To override simply nudge the steering wheel twice! 
 - <b>  Auto LCA:</b> credit to @SiGmAX666: Auto Lane change assist, no need for steering nudge. LCA will abort if driver override steering wheel. To enable Auto LCA(disabled by default),  change line 189 in selfdrive/car/hyundai/interface.py to:
 ```python
     ret.autoLcaEnabled = 1
