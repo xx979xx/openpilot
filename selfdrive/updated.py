@@ -256,7 +256,7 @@ def finalize_from_ovfs_copy():
   cloudlog.info("done finalizing overlay")
 
 
-def attempt_update(sm, NEED_REBOOT):
+def attempt_update(NEED_REBOOT):
   cloudlog.info("attempting git update inside staging overlay")
 
   git_fetch_output = run(NICE_LOW_PRIORITY + ["git", "fetch"], OVERLAY_MERGED)
@@ -355,7 +355,7 @@ def main(gctx=None):
           overlay_init_done = True
 
         if params.get("IsOffroad") == b"1":
-          NEED_REBOOT = attempt_update(sm, NEED_REBOOT)
+          NEED_REBOOT = attempt_update(NEED_REBOOT)
         else:
           cloudlog.info("not running updater, openpilot running")
 
