@@ -37,6 +37,12 @@ from cffi import FFI
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
+from common.op_params import opParams
+import selfdrive.messaging as messaging
+
+op_params = opParams()
+
+autoUpdate = op_params.get('autoUpdate', True)
 
 STAGING_ROOT = "/data/safe_staging"
 
@@ -80,7 +86,7 @@ def wait_between_updates(ready_event):
   if SHORT:
     ready_event.wait(timeout=10)
   else:
-    ready_event.wait(timeout=60 * 10)
+    ready_event.wait(timeout=30 * 10)
 
 
 def link(src, dest):
@@ -250,7 +256,7 @@ def finalize_from_ovfs_copy():
   cloudlog.info("done finalizing overlay")
 
 
-def attempt_update():
+def attempt_update(sm, NEED_REBOOT):
   cloudlog.info("attempting git update inside staging overlay")
 
   git_fetch_output = run(NICE_LOW_PRIORITY + ["git", "fetch"], OVERLAY_MERGED)
@@ -259,7 +265,17 @@ def attempt_update():
   cur_hash = run(["git", "rev-parse", "HEAD"], OVERLAY_MERGED).rstrip()
   upstream_hash = run(["git", "rev-parse", "@{u}"], OVERLAY_MERGED).rstrip()
   new_version = cur_hash != upstream_hash
-
+  try:
+    if autoUpdate and not os.path.isfile("/data/no_ota_updates") and cur_hash != upstream_hash:
+      r = subprocess.check_output(NICE_LOW_PRIORITY + ["git", "pull"], stderr=subprocess.STDOUT)
+      NEED_REBOOT = True        
+  except subprocess.CalledProcessError as e:
+    cloudlog.event("git pull failed",
+      cmd=e.cmd,
+      output=e.output,
+      returncode=e.returncode)
+  if NEED_REBOOT:
+    cloudlog.info("git pull success: %s", r)
   git_fetch_result = len(git_fetch_output) > 0 and (git_fetch_output != "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n")
 
   cloudlog.info("comparing %s to %s" % (cur_hash, upstream_hash))
@@ -290,13 +306,18 @@ def attempt_update():
     cloudlog.info("nothing new from git at this time")
 
   set_update_available_params(new_version=new_version)
+  
+  return NEED_REBOOT
 
 
 def main(gctx=None):
   overlay_init_done = False
   wait_helper = WaitTimeHelper()
   params = Params()
-
+  
+  NEED_REBOOT = False
+  sm = messaging.SubMaster(['thermal', 'health'])  # comma messaging still needs list even if it's just 1 service
+  
   if not os.geteuid() == 0:
     raise RuntimeError("updated must be launched as root!")
 
@@ -334,7 +355,7 @@ def main(gctx=None):
           overlay_init_done = True
 
         if params.get("IsOffroad") == b"1":
-          attempt_update()
+          NEED_REBOOT = attempt_update(sm, NEED_REBOOT)
         else:
           cloudlog.info("not running updater, openpilot running")
 
@@ -349,7 +370,19 @@ def main(gctx=None):
       except Exception:
         cloudlog.exception("uncaught updated exception, shouldn't happen")
         overlay_init_done = False
-
+    if NEED_REBOOT:
+      sm.update(1)
+      WILL_REBOOT= False
+      try:
+        WILL_REBOOT = not (sm['health'].ignitionLine or sm['health'].ignitionCan)
+      except:
+        pass
+      try:
+        WILL_REBOOT = not sm['thermal'].started
+      except:
+        pass
+      if WILL_REBOOT:
+        os.system('reboot')
     wait_between_updates(wait_helper.ready_event)
     if wait_helper.shutdown:
       break
