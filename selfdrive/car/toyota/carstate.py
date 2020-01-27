@@ -27,6 +27,8 @@ def get_can_parser(CP):
     # sig_name, sig_address, default
     ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
     ("GEAR", "GEAR_PACKET", 0),
+    ("SPORT_ON", "GEAR_PACKET", 0),
+    ("ECON_ON", "GEAR_PACKET", 0),
     ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
     ("GAS_PEDAL", "GAS_PEDAL", 0),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
@@ -121,6 +123,7 @@ class CarState():
     self.left_blinker_on = 0
     self.right_blinker_on = 0
     self.angle_offset = 0.
+    self.pcm_acc_status = False
     self.init_angle_offset = False
     self.v_cruise_pcmlast = 41.0
     self.setspeedoffset = 34.0
@@ -191,6 +194,25 @@ class CarState():
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
     self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
+    try:
+      self.econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
+    except:
+      self.econ_on = 0
+    try:
+      self.sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
+    except:
+      self.sport_on = 0
+    if self.sport_on == 1:
+      self.gasbuttonstatus = 1
+    if self.econ_on == 1:
+      self.gasbuttonstatus = 2
+    if self.sport_on == 0 and self.econ_on == 0:
+      self.gasbuttonstatus = 0
+    msg = messaging_arne.new_message()
+    msg.init('arne182Status')
+    msg.arne182Status.gasbuttonstatus = self.gasbuttonstatus
+    if not travis:
+      self.arne_pm.send('arne182Status', msg)
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       self.main_on = cp.vl["DSU_CRUISE"]['MAIN_ON']
     else:
@@ -207,7 +229,6 @@ class CarState():
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
-    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     
     self.user_brake = 0
     if self.CP.carFingerprint == CAR.LEXUS_IS:
@@ -218,10 +239,12 @@ class CarState():
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
     if self.CP.carFingerprint in TSS2_CAR:
       minimum_set_speed = 27.0
+    elif self.CP.carFingerprint == CAR.RAV4:
+      minimum_set_speed = 44.0
     else:
       minimum_set_speed = 41.0
     if cp.vl["PCM_CRUISE"]['CRUISE_STATE'] and not self.pcm_acc_status:
-      if self.v_ego < 11.38:
+      if self.v_ego < 12.5:
         self.setspeedoffset = max(min(int(minimum_set_speed-self.v_ego*3.6),(minimum_set_speed-7.0)),0.0)
         self.v_cruise_pcmlast = self.v_cruise_pcm
       else:
@@ -251,7 +274,7 @@ class CarState():
 
     self.v_cruise_pcm = min(max(7, int(self.v_cruise_pcm) - self.setspeedoffset),169)
 
-    
+    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     if self.CP.carFingerprint == CAR.PRIUS:
