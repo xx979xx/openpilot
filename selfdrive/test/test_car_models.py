@@ -76,7 +76,7 @@ routes = {
   #  'enableCamera': True,
   #},
   "9f7a7e50a51fb9db|2019-01-17--18-34-21": {
-    'carFingerprint': CHRYSLER.JEEP_CHEROKEE_2017,
+    'carFingerprint': CHRYSLER.JEEP_CHEROKEE_2018,
     'enableCamera': True,
   },
   "192a598e34926b1e|2019-04-04--13-27-39": {
