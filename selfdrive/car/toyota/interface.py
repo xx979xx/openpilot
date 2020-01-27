@@ -163,7 +163,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.03]]
       ret.lateralTuning.pid.kf = 0.00006
 
-    elif candidate == CAR.RAV4_TSS2:
+    elif candidate in [CAR.RAV4_TSS2, CAR.RAV4H_TSS2]:
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.68986
@@ -203,7 +203,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
-    elif candidate == CAR.LEXUS_IS:
+    elif candidate in [CAR.LEXUS_IS, CAR.LEXUS_ISH, CAR.LEXUS_RX]:
       stop_and_go = False
       ret.safetyParam = 77
       ret.wheelbase = 2.79908
