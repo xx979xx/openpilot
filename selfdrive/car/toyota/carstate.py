@@ -123,6 +123,7 @@ class CarState():
     self.left_blinker_on = 0
     self.right_blinker_on = 0
     self.angle_offset = 0.
+    self.pcm_acc_status = False
     self.init_angle_offset = False
     self.v_cruise_pcmlast = 41.0
     self.setspeedoffset = 34.0
@@ -228,7 +229,6 @@ class CarState():
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
-    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     
     self.user_brake = 0
     if self.CP.carFingerprint == CAR.LEXUS_IS:
@@ -244,7 +244,7 @@ class CarState():
     else:
       minimum_set_speed = 41.0
     if cp.vl["PCM_CRUISE"]['CRUISE_STATE'] and not self.pcm_acc_status:
-      if self.v_ego < 11.38:
+      if self.v_ego < 12.5:
         self.setspeedoffset = max(min(int(minimum_set_speed-self.v_ego*3.6),(minimum_set_speed-7.0)),0.0)
         self.v_cruise_pcmlast = self.v_cruise_pcm
       else:
@@ -274,7 +274,7 @@ class CarState():
 
     self.v_cruise_pcm = min(max(7, int(self.v_cruise_pcm) - self.setspeedoffset),169)
 
-    
+    self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
     if self.CP.carFingerprint == CAR.PRIUS:
