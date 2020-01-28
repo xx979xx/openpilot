@@ -11,7 +11,7 @@ from selfdrive.controls.lib.pathplanner import PathPlanner
 import cereal.messaging as messaging
 import cereal.messaging_arne as messaging_arne
 
-def plannerd_thread(sm=None, pm=None):
+def plannerd_thread(sm=None, pm=None, arne_sm=None):
   gc.disable()
 
   # start the loop
