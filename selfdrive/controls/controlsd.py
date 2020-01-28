@@ -561,7 +561,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
   return CC, events_bytes
 
 
-def controlsd_thread(sm=None, pm=None, can_sock=None):
+def controlsd_thread(sm=None, pm=None, can_sock=None, arne_sm=None):
   gc.disable()
 
   # start the loop
@@ -663,7 +663,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     prof.checkpoint("Ratekeeper", ignore=True)
 
     # Sample data and compute car events
-    CS, events, cal_perc, mismatch_counter, can_error_counter = data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, can_error_counter, params, arne_sm)
+    CS, events, cal_perc, mismatch_counter, can_error_counter, events_arne182 = data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, can_error_counter, params, arne_sm)
     prof.checkpoint("Sample")
 
     # Create alerts
