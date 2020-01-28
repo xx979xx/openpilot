@@ -586,7 +586,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None, arne_sm=None):
                               'model', 'gpsLocation', 'radarState'], ignore_alive=['gpsLocation'])
 
   if arne_sm is None:
-    arne_sm = messaging_arne.SubMaster('arne182Status')
+    arne_sm = messaging_arne.SubMaster(['arne182Status'])
     
   if can_sock is None:
     can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
