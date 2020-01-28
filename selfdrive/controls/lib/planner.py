@@ -16,6 +16,7 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 from common.op_params import opParams
+from common.travis_checker import travis
 op_params = opParams()
 offset = op_params.get('speed_offset', 0) # m/s
 osm = op_params.get('osm', True)
@@ -161,7 +162,10 @@ class Planner():
   def update(self, sm, pm, CP, VM, PP, arne_sm):
     """Gets called when new radarState is available"""
     cur_time = sec_since_boot()
-    gas_button_status = arne_sm['arne182Status'].gasbuttonstatus
+    if travis:
+      gas_button_status = 0
+    else:
+      gas_button_status = arne_sm['arne182Status'].gasbuttonstatus
     v_ego = sm['carState'].vEgo
     blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
     if blinkers:
