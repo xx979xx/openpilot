@@ -37,7 +37,7 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
 
     ret = car.CarParams.new_message()
-    ret_arne182 = arne182.CarStateArne182.new_message()
+    
     ret.carName = "mock"
     ret.carFingerprint = candidate
 
@@ -88,6 +88,7 @@ class CarInterface(CarInterfaceBase):
 
     # create message
     ret = car.CarState.new_message()
+    ret_arne182 = arne182.CarStateArne182.new_message()
 
     # speeds
     ret.vEgo = self.speed
