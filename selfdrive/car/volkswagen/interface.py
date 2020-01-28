@@ -1,6 +1,6 @@
-from cereal import car
+from cereal import car, arne182
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
+from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, create_event_arne
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES
 from selfdrive.car.volkswagen.carstate import CarState, get_mqb_pt_can_parser, get_mqb_cam_can_parser
@@ -118,9 +118,11 @@ class CarInterface(CarInterfaceBase):
   def update(self, c, can_strings):
     canMonoTimes = []
     events = []
+    eventsArne182 = []
     buttonEvents = []
     params = Params()
     ret = car.CarState.new_message()
+    ret_arne182 = arne182.CarStateArne182.new_message()
 
     # Process the most recent CAN message traffic, and check for validity
     # The camera CAN has no signals we use at this time, but we process it
@@ -231,7 +233,7 @@ class CarInterface(CarInterfaceBase):
     self.buttonStatesPrev = self.CS.buttonStates.copy()
 
     # cast to reader so it can't be modified
-    return ret.as_reader()
+    return ret.as_reader(), ret_arne182.as_reader()
 
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
