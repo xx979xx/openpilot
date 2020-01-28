@@ -126,6 +126,9 @@ def fingerprint(logcan, sendcan, has_relay):
         if frame > frame_fingerprint:
           # fingerprint done
           car_fingerprint = candidate_cars[b][0]
+      elif len(candidate_cars[b]) == 2: # For the RAV4 2019 and Corolla 2020 LE Fingerprint problem
+        if frame > 180:
+          car_fingerprint = candidate_cars[b][1]
 
     # bail if no cars left or we've been waiting for more than 2s
     failed = all(len(cc) == 0 for cc in candidate_cars.values()) or frame > 200
