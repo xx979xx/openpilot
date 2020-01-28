@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from cereal import car
+from cereal import car, arne182
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
+from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event, create_event_arne
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.hyundai.carstate import CarState, get_can_parser, get_camera_parser
 from selfdrive.car.hyundai.values import ECU, ECU_FINGERPRINT, CAR, get_hud_alerts, FEATURES, FINGERPRINTS
@@ -157,7 +157,8 @@ class CarInterface(CarInterfaceBase):
     self.CS.update(self.cp, self.cp_cam)
     # create message
     ret = car.CarState.new_message()
-
+    ret_arne182 = arne182.CarStateArne182.new_message()
+    
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
     # speeds
@@ -233,6 +234,7 @@ class CarInterface(CarInterfaceBase):
       self.low_speed_alert = False
 
     events = []
+    eventsArne182 = []
     if not ret.gearShifter == GearShifter.drive:
       events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if ret.doorOpen:
@@ -265,12 +267,13 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('belowSteerSpeed', [ET.WARNING]))
 
     ret.events = events
-
+    ret_arne182.events = eventsArne182
+    
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
 
-    return ret.as_reader()
+    return ret.as_reader(), ret_arne182.as_reader()
 
   def apply(self, c):
 
