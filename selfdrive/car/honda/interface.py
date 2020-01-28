@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import numpy as np
-from cereal import car
+from cereal import car, arne182
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events
+from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET, get_events, create_event_arne
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.honda.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, ECU, ECU_FINGERPRINT, FINGERPRINTS
@@ -384,6 +384,7 @@ class CarInterface(CarInterfaceBase):
 
     # create message
     ret = car.CarState.new_message()
+    ret_arne182 = arne182.CarStateArne182.new_message()
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
@@ -490,6 +491,7 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = []
+    eventsArne182 = []
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
     elif self.CS.steer_warning:
@@ -562,7 +564,7 @@ class CarInterface(CarInterfaceBase):
         self.last_enable_sent = cur_time
     elif enable_pressed:
       events.append(create_event('buttonEnable', [ET.ENABLE]))
-
+    ret_arne182.events = eventsArne182
     ret.events = events
 
     # update previous brake/gas pressed
@@ -570,7 +572,7 @@ class CarInterface(CarInterfaceBase):
     self.brake_pressed_prev = ret.brakePressed
 
     # cast to reader so it can't be modified
-    return ret.as_reader()
+    return ret.as_reader(), ret_arne182.as_reader()
 
   # pass in a car.CarControl
   # to be called @ 100hz
