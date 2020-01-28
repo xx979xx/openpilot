@@ -220,7 +220,7 @@ class CarInterface(CarInterfaceBase):
     # Attempt OP engagement only on rising edge of stock ACC engagement.
     elif not self.cruiseStateEnabledPrev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
-
+    ret_arne182.events = eventsArne182
     ret.events = events
     ret.buttonEvents = buttonEvents
     ret.canMonoTimes = canMonoTimes
