@@ -48,8 +48,8 @@ def plannerd_thread(sm=None, pm=None, arne_sm=None):
       PL.update(sm, pm, CP, VM, PP, arne_sm)
 
 
-def main(sm=None, pm=None):
-  plannerd_thread(sm, pm)
+def main(sm=None, pm=None, arne_sm=None):
+  plannerd_thread(sm, pm, arne_sm)
 
 
 if __name__ == "__main__":
