@@ -587,7 +587,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None, arne_sm=None):
 
   if sm is None:
     sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
-                              'model', 'gpsLocation'], ignore_alive=['gpsLocation'])
+                              'model', 'gpsLocation', 'radarState'], ignore_alive=['gpsLocation'])
 
   if arne_sm is None:
     arne_sm = messaging_arne.SubMaster(['arne182Status'])
