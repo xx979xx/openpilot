@@ -72,10 +72,9 @@ class LongControl():
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, v_ego, gas_pressed, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP):#, gas_button_status, has_lead):
+  def update(self, active, v_ego, gas_pressed, brake_pressed, standstill, cruise_standstill, v_cruise, v_target, v_target_future, a_target, CP, hasLead, dRel):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Actuation limits
-    #enableGasInterceptor = CP.enableGasInterceptor
     gas_max = interp(v_ego, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(v_ego, CP.brakeMaxBP, CP.brakeMaxV)
 
@@ -121,8 +120,11 @@ class LongControl():
     # Intention is to stop, switch to a different brake control until we stop
     elif self.long_control_state == LongCtrlState.stopping:
       # Keep applying brakes until the car is stopped
+      factor = 1
+      if hasLead:
+        factor = interp(dRel,[[0.0,1.0,3.0,5.0], [10.0,5.0,2.0,1.0]))
       if not standstill or output_gb > -BRAKE_STOPPING_TARGET:
-        output_gb -= STOPPING_BRAKE_RATE / RATE
+        output_gb -= STOPPING_BRAKE_RATE / RATE * factor
       output_gb = clip(output_gb, -brake_max, gas_max)
 
       self.v_pid = v_ego
@@ -130,8 +132,11 @@ class LongControl():
 
     # Intention is to move again, release brake fast before handing control to PID
     elif self.long_control_state == LongCtrlState.starting:
+      factor = 1
+      if hasLead:
+        factor = interp(dRel,[0.0,2.0,4.0], [0.0,0.5,1.0])
       if output_gb < -0.2:
-        output_gb += STARTING_BRAKE_RATE / RATE
+        output_gb += STARTING_BRAKE_RATE / RATE * factor
       self.v_pid = v_ego
       self.pid.reset()
 
