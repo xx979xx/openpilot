@@ -122,7 +122,7 @@ class LongControl():
       # Keep applying brakes until the car is stopped
       factor = 1
       if hasLead:
-        factor = interp(dRel,[[0.0,1.0,3.0,5.0], [10.0,5.0,2.0,1.0]))
+        factor = interp(dRel,[0.0,1.0,3.0,5.0], [10.0,5.0,2.0,1.0])
       if not standstill or output_gb > -BRAKE_STOPPING_TARGET:
         output_gb -= STOPPING_BRAKE_RATE / RATE * factor
       output_gb = clip(output_gb, -brake_max, gas_max)
