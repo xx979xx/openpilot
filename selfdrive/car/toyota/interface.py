@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from cereal import car
+from cereal import car, arne182
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
+from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event, create_event_arne
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.toyota.values import ECU, ECU_FINGERPRINT, CAR, NO_STOP_TIMER_CAR, TSS2_CAR, FINGERPRINTS
@@ -40,7 +40,7 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
 
     ret = car.CarParams.new_message()
-
+    
     ret.carName = "toyota"
     ret.carFingerprint = candidate
     ret.isPandaBlack = has_relay
@@ -273,13 +273,13 @@ class CarInterface(CarInterfaceBase):
     if ret.enableGasInterceptor:
       ret.gasMaxBP = [0., 9., 55]
       ret.gasMaxV = [0.2, 0.5, 0.7]
-      ret.longitudinalTuning.kpV = [0.50, 0.4, 0.3]  # braking tune
-      ret.longitudinalTuning.kiV = [0.135, 0.1]
+      ret.longitudinalTuning.kpV = [1.0, 1.0, 0.3]  # braking tune
+      ret.longitudinalTuning.kiV = [0.15, 0.1]
     else:
       ret.gasMaxBP = [0., 9., 55]
       ret.gasMaxV = [0.2, 0.5, 0.7]
-      ret.longitudinalTuning.kpV = [0.325, 0.325, 0.325]  # braking tune from rav4h
-      ret.longitudinalTuning.kiV = [0.1, 0.10]
+      ret.longitudinalTuning.kpV = [2.5, 1.5, 0.325]  # braking tune from rav4h
+      ret.longitudinalTuning.kiV = [0.3, 0.10]
 
     return ret
 
@@ -293,6 +293,7 @@ class CarInterface(CarInterfaceBase):
 
     # create message
     ret = car.CarState.new_message()
+    ret_arne182 = arne182.CarStateArne182.new_message()
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
@@ -331,7 +332,8 @@ class CarInterface(CarInterfaceBase):
     ret.steeringTorqueEps = self.CS.steer_torque_motor
     ret.steeringPressed = self.CS.steer_override
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
+    eventsArne182 = []
+    
     # cruise state
     if not self.cruise_enabled_prev:
       self.waiting = False
@@ -340,7 +342,7 @@ class CarInterface(CarInterfaceBase):
       if self.keep_openpilot_engaged:
         ret.cruiseState.enabled = bool(self.CS.main_on)
       if not self.CS.pcm_acc_active:
-        #eventsArne182.append(create_event_arne('longControlDisabled', [ET.WARNING]))
+        eventsArne182.append(create_event_arne('longControlDisabled', [ET.WARNING]))
         ret.brakePressed = True
         self.waiting = False
     if self.CS.v_ego < 1 or not self.keep_openpilot_engaged:
@@ -387,6 +389,7 @@ class CarInterface(CarInterfaceBase):
       
     # events
     events = []
+    
 
     if self.cp_cam.can_invalid_cnt >= 200 and self.CP.enableCamera:
       events.append(create_event('invalidGiraffeToyota', [ET.PERMANENT]))
@@ -425,8 +428,8 @@ class CarInterface(CarInterfaceBase):
     if self.waiting:
       if ret.gasPressed:
         self.waiting = False
-      #else:
-      #  eventsArne182.append(create_event_arne('waitingMode', [ET.WARNING]))
+      else:
+        eventsArne182.append(create_event_arne('waitingMode', [ET.WARNING]))
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
     if (((ret.gasPressed and not self.gas_pressed_prev) or \
        (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001))) and disengage_event) or (ret.brakePressed and not self.brake_pressed_prev and ret.vEgo < 0.1):
@@ -436,12 +439,13 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     ret.events = events
-
+    ret_arne182.events = eventsArne182
+    
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
 
-    return ret.as_reader()
+    return ret.as_reader(), ret_arne182.as_reader()
 
   # pass in a car.CarControl
   # to be called @ 100hz
