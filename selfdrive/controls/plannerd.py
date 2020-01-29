@@ -40,7 +40,7 @@ def plannerd_thread(sm=None, pm=None, arne_sm=None):
 
   while True:
     sm.update()
-    arne_sm.update()
+    arne_sm.update(0)
     
     if sm.updated['model']:
       PP.update(sm, pm, CP, VM)
