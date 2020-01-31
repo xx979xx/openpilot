@@ -70,7 +70,7 @@ def update_panda():
   cloudlog.warning("Panda %s connected, version: %s, signature %s, expected version: %s, signature: %s" % (
     serial,
     panda_version,
-    panda_signature.hex(),
+    panda_signature,
     repo_version,
     fw_signature.hex(),
   ))
