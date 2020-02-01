@@ -1,3 +1,5 @@
+import numpy as np
+from common.numpy_fast import interp
 import math
 from cereal import car
 from common.numpy_fast import mean
@@ -128,7 +130,11 @@ class CarState():
     self.v_cruise_pcmlast = 41.0
     self.setspeedoffset = 34.0
     self.setspeedcounter = 0
-    
+    self.Angles = np.zeros(250)
+    #self.Angles_later = np.zeros(250)
+    self.Angle_counter = 0
+    self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
+    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     if not travis:
       self.arne_pm = messaging_arne.PubMaster(['liveTrafficData', 'arne182Status'])
       
@@ -273,6 +279,16 @@ class CarState():
 
 
     self.v_cruise_pcm = min(max(7, int(self.v_cruise_pcm) - self.setspeedoffset),169)
+    
+    if not self.left_blinker_on and not self.right_blinker_on:
+      self.Angles[self.Angle_counter] = abs(self.angle_steers)
+      #self.Angles_later[self.Angle_counter] = abs(angle_later)
+      self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
+      #self.v_cruise_pcm = int(min(self.v_cruise_pcm, self.brakefactor * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
+    else:
+      self.Angles[self.Angle_counter] = 0
+      #self.Angles_later[self.Angle_counter] = 0
+    self.Angle_counter = (self.Angle_counter + 1 ) % 250
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
