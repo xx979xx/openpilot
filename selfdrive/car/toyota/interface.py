@@ -423,8 +423,11 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('pcmEnable', [ET.ENABLE]))
     elif not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-      if eventsArne182[0].name == 'longControlDisabled':
-        del eventsArne182[0]
+      try:
+        if eventsArne182[0].name == 'longControlDisabled':
+          del eventsArne182[0]
+      except IndexError:
+        pass
     if not self.waiting and ret.vEgo < 0.3 and not ret.gasPressed and self.CP.carFingerprint == CAR.RAV4H:
       self.waiting = True
     if self.waiting:
