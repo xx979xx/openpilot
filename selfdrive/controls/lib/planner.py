@@ -129,11 +129,13 @@ class Planner():
       lead1_check = math.sqrt((lead_1.dRel-center_x)**2+(lead_1.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngle/1800.*math.pi))+1.
       lead2_check = math.sqrt((lead_2.dRel-center_x)**2+(lead_2.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngle/1800.*math.pi))+1.
     if enabled:
-      solutions = {'model': self.v_model, 'cruise': self.v_cruise}
+      solutions = {}
       if self.mpc1.prev_lead_status and lead1_check:
         solutions['mpc1'] = self.mpc1.v_mpc
       if self.mpc2.prev_lead_status and lead2_check:
         solutions['mpc2'] = self.mpc2.v_mpc
+      solutions['model'] = self.v_model
+      solutions['cruise'] = self.v_cruise
 
       slowest = min(solutions, key=solutions.get)
 
