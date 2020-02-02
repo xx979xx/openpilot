@@ -86,6 +86,7 @@ typedef struct UIScene {
   float v_ego;
   bool decel_for_model;
   
+  float gpsAccuracy;
   float speedlimit;
   float angleSteers;
   float speedlimitaheaddistance;
