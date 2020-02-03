@@ -25,6 +25,43 @@ struct ALCAState {
   alcaDirection @6 :Int8;
 }
 
+struct ThermalOnlineData {
+  cpu0 @0 :UInt16;
+  cpu1 @1 :UInt16;
+  cpu2 @2 :UInt16;
+  cpu3 @3 :UInt16;
+  mem @4 :UInt16;
+  gpu @5 :UInt16;
+  bat @6 :UInt32;
+  pa0 @21 :UInt16;
+
+  # not thermal
+  freeSpace @7 :Float32;
+  batteryPercent @8 :Int16;
+  batteryStatus @9 :Text;
+  batteryCurrent @15 :Int32;
+  batteryVoltage @16 :Int32;
+  usbOnline @12 :Bool;
+
+  fanSpeed @10 :UInt16;
+  started @11 :Bool;
+  startedTs @13 :UInt64;
+
+  thermalStatus @14 :ThermalStatus;
+  chargingError @17 :Bool;
+  chargingDisabled @18 :Bool;
+
+  memUsedPercent @19 :Int8;
+  cpuPerc @20 :Int8;
+
+  enum ThermalStatus {
+    green @0;   # all processes run
+    yellow @1;  # critical processes run (kill uploader), engage still allowed
+    red @2;     # no engage, will disengage
+    danger @3;  # immediate process shutdown
+  }
+}
+
 struct CarEventArne182 @0x9b1657f34caf3ad4 {
   name @0 :EventNameArne182;
   enable @1 :Bool;
@@ -95,5 +132,6 @@ struct EventArne182 {
     latControl @3:LatControl;
     phantomData @4:PhantomData;
     managerData @5:ManagerData;
+    thermalonline @6:ThermalOnlineData;
   }
 }
