@@ -440,19 +440,6 @@ void handle_message(UIState *s, Message * msg) {
     struct cereal_CarState datad;
     cereal_read_CarState(&datad, eventd.carState);
     s->scene.brakeLights = datad.brakeLights;
-  // getting thermal related data for dev ui
-  }
-  cereal_EventArne182_ptr eventp;
-  eventarne182p.p = capn_getp(capn_root(&ctx), 0, 1);
-  struct EventArne182 eventarne182d;
-  cereal_read_EventArne182(&eventarne182d, eventarne182p);
-  
-  if (eventd.which == cereal_EventArne182_thermalonline) {
-    struct cereal_ThermalOnlineData datad;
-    cereal_read_ThermalOnlineData(&datad, eventd.thermal);
-
-    s->scene.pa0 = datad.pa0;
-    s->scene.freeSpace = datad.freeSpace;
   }
   capn_free(&ctx);
 }
