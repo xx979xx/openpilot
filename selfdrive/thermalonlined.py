@@ -58,13 +58,6 @@ def thermalonlined_thread():
       except FileNotFoundError:
         pass
 
-      current_filter.update(msg.thermal.batteryCurrent / 1e6)
-
-      # TODO: add car battery voltage check
-      max_cpu_temp = max(msg.thermal.cpu0, msg.thermal.cpu1,
-                         msg.thermal.cpu2, msg.thermal.cpu3) / 10.0
-      max_comp_temp = max(max_cpu_temp, msg.thermal.mem / 10., msg.thermal.gpu / 10.)
-      bat_temp = msg.thermal.bat/1000.
       thermal_sock.send(msg.to_bytes())
     count += 1
 
