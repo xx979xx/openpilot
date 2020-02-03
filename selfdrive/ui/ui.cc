@@ -114,7 +114,7 @@ static void ui_init(UIState *s) {
   s->livecalibration_sock = SubSocket::create(s->ctx, "liveCalibration");
   s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
   s->carstate_sock = SubSocket::create(s->ctx, "carState");
-  s->thermal_sock = SubSocket::create(s->ctx, "thermal");
+  s->thermal_sock = SubSocket::create(s->ctx, "thermalonline");
 
   assert(s->model_sock != NULL);
   assert(s->controlsstate_sock != NULL);
@@ -438,9 +438,9 @@ void handle_message(UIState *s, Message * msg) {
     cereal_read_CarState(&datad, eventd.carState);
     s->scene.brakeLights = datad.brakeLights;
   // getting thermal related data for dev ui
-  } else if (eventd.which == cereal_Event_thermal) {
-    struct cereal_ThermalData datad;
-    cereal_read_ThermalData(&datad, eventd.thermal);
+  } else if (eventd.which == cereal_EventArne182_thermalonline) {
+    struct cereal_ThermalOnlineData datad;
+    cereal_read_ThermalOnlineData(&datad, eventd.thermal);
 
     s->scene.pa0 = datad.pa0;
     s->scene.freeSpace = datad.freeSpace;
