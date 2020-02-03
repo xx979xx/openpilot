@@ -40,21 +40,21 @@ def thermalonlined_thread():
     if (count % int(1. / DT_TRML)) == 0:
       msg = read_thermal()
 
-      msg.thermal.freeSpace = get_available_percent(default=100.0) / 100.0
-      msg.thermal.memUsedPercent = int(round(psutil.virtual_memory().percent))
-      msg.thermal.cpuPerc = int(round(psutil.cpu_percent()))
+      msg.thermalonline.freeSpace = get_available_percent(default=100.0) / 100.0
+      msg.thermalonline.memUsedPercent = int(round(psutil.virtual_memory().percent))
+      msg.thermalonline.cpuPerc = int(round(psutil.cpu_percent()))
 
       try:
         with open("/sys/class/power_supply/battery/capacity") as f:
-          msg.thermal.batteryPercent = int(f.read())
+          msg.thermalonline.batteryPercent = int(f.read())
         with open("/sys/class/power_supply/battery/status") as f:
-          msg.thermal.batteryStatus = f.read().strip()
+          msg.thermalonline.batteryStatus = f.read().strip()
         with open("/sys/class/power_supply/battery/current_now") as f:
-          msg.thermal.batteryCurrent = int(f.read())
+          msg.thermalonline.batteryCurrent = int(f.read())
         with open("/sys/class/power_supply/battery/voltage_now") as f:
-          msg.thermal.batteryVoltage = int(f.read())
+          msg.thermalonline.batteryVoltage = int(f.read())
         with open("/sys/class/power_supply/usb/present") as f:
-          msg.thermal.usbOnline = bool(int(f.read()))
+          msg.thermalonline.usbOnline = bool(int(f.read()))
       except FileNotFoundError:
         pass
 
