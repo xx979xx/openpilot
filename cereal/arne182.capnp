@@ -132,6 +132,6 @@ struct EventArne182 {
     latControl @3:LatControl;
     phantomData @4:PhantomData;
     managerData @5:ManagerData;
-    thermalonline @6:ThermalOnlineData;
+    thermalonline @7:ThermalOnlineData;
   }
 }
