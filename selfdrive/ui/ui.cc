@@ -629,6 +629,8 @@ static void ui_update(UIState *s) {
 
       delete msg;
     }
+  }
+  while(true) {
     auto pollsarne182 = s->pollerarne182->poll(0);
 
     if (pollsarne182.size() == 0)
@@ -644,7 +646,6 @@ static void ui_update(UIState *s) {
 
       delete msgarne182;
     }
-  }
 }
 
 static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
