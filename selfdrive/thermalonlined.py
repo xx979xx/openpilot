@@ -18,14 +18,14 @@ def read_tz(x, clip=True):
 def read_thermal():
   dat = messaging.new_message()
   dat.init('thermalonline')
-  dat.thermal.cpu0 = read_tz(5)
-  dat.thermal.cpu1 = read_tz(7)
-  dat.thermal.cpu2 = read_tz(10)
-  dat.thermal.cpu3 = read_tz(12)
-  dat.thermal.mem = read_tz(2)
-  dat.thermal.gpu = read_tz(16)
-  dat.thermal.bat = read_tz(29)
-  dat.thermal.pa0 = read_tz(25)
+  dat.thermalonline.cpu0 = read_tz(5)
+  dat.thermalonline.cpu1 = read_tz(7)
+  dat.thermalonline.cpu2 = read_tz(10)
+  dat.thermalonline.cpu3 = read_tz(12)
+  dat.thermalonline.mem = read_tz(2)
+  dat.thermalonline.gpu = read_tz(16)
+  dat.thermalonline.bat = read_tz(29)
+  dat.thermalonline.pa0 = read_tz(25)
   return dat
 
 
