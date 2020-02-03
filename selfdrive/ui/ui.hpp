@@ -13,6 +13,7 @@
 #include "messaging.hpp"
 
 #include "cereal/gen/c/log.capnp.h"
+#include "cereal/gen/c/arne182.capnp.h"
 
 #include "sound.hpp"
 
