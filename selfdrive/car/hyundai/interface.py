@@ -47,7 +47,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.enableCruise = True  # stock acc
 
-    ret.steerActuatorDelay = 0.1  # Default delay
+    ret.steerActuatorDelay = 0.26  # Default delay
     ret.steerRateCost = 0.5
     ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 1.
@@ -75,9 +75,9 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1411. + STD_CARGO_KG  # Spec Elantra GT Sport
       ret.wheelbase = 2.65  # Spec Elantra GT Sport
       ret.steerRatio = 13.4  # Spec Elantra GT Sport
-      tire_stiffness_factor = 0.5
+      tire_stiffness_factor = 0.384
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18], [0.05]]
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.GENESIS:
       ret.lateralTuning.pid.kf = 0.00005
