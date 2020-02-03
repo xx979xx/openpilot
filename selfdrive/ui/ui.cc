@@ -448,7 +448,7 @@ void handle_message_arne182(UIState *s, Message * msg) {
   struct capn ctxarne182;
   capn_init_mem(&ctxarne182, (uint8_t*)msg->getData(), msg->getSize(), 0);
 
-  cereal_EventArne182_ptr eventp;
+  cereal_EventArne182_ptr eventarne182p;
   eventarne182p.p = capn_getp(capn_root(&ctxarne182), 0, 1);
   struct EventArne182 eventarne182d;
   cereal_read_EventArne182(&eventarne182d, eventarne182p);
