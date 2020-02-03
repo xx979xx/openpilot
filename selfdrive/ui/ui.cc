@@ -130,7 +130,7 @@ static void ui_init(UIState *s) {
                               s->uilayout_sock,
                               s->livecalibration_sock,
                               s->radarstate_sock,
-                              s->carstate_sock,
+                              s->carstate_sock
                              });
   s->pollerarne182 = Poller::create({
                               s->thermal_sock
