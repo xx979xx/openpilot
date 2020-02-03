@@ -617,7 +617,7 @@ static void ui_update(UIState *s) {
     auto polls = s->poller->poll(0);
 
     if (polls.size() == 0)
-      return;
+      break;
 
     for (auto sock : polls){
       Message * msg = sock->receive();
