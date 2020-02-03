@@ -726,6 +726,17 @@ static void* vision_connect_thread(void *args) {
         delete msg;
       }
     }
+    while (true){
+      auto polls = s->pollerarne182->poll(0);
+      if (polls.size() == 0)
+        break;
+
+      for (auto sock : polls){
+        Message * msg = sock->receive();
+        if (msg == NULL) continue;
+        delete msg;
+      }
+    }
 
     pthread_mutex_unlock(&s->lock);
   }
