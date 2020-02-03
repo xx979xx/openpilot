@@ -646,6 +646,7 @@ static void ui_update(UIState *s) {
 
       delete msgarne182;
     }
+  }
 }
 
 static int vision_subscribe(int fd, VisionPacket *rp, VisionStreamType type) {
