@@ -642,7 +642,7 @@ static void ui_update(UIState *s) {
 
       handle_message_arne182(s, msgarne182);
 
-      delete msg;
+      delete msgarne182;
     }
   }
 }
