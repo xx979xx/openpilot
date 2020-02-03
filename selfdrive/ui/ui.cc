@@ -450,17 +450,17 @@ void handle_message_arne182(UIState *s, Message * msg) {
 
   cereal_EventArne182_ptr eventarne182p;
   eventarne182p.p = capn_getp(capn_root(&ctxarne182), 0, 1);
-  struct EventArne182 eventarne182d;
+  struct cereal_EventArne182 eventarne182d;
   cereal_read_EventArne182(&eventarne182d, eventarne182p);
   
-  if (eventd.which == cereal_EventArne182_thermalonline) {
+  if (eventarne182d.which == cereal_EventArne182_thermalonline) {
     struct cereal_ThermalOnlineData datad;
-    cereal_read_ThermalOnlineData(&datad, eventd.thermal);
+    cereal_read_ThermalOnlineData(&datad, eventarne182d.thermalonline);
 
     s->scene.pa0 = datad.pa0;
     s->scene.freeSpace = datad.freeSpace;
   }
-  capn_free(&ctx);
+  capn_free(&ctxarne182);
 }
 
 static void ui_update(UIState *s) {
@@ -636,11 +636,11 @@ static void ui_update(UIState *s) {
 
     for (auto sock : pollsarne182){
       Message * msgarne182 = sock->receive();
-      if (msg == NULL) continue;
+      if (msgarne182 == NULL) continue;
 
       set_awake(s, true);
 
-      handle_message_arne182(s, msg);
+      handle_message_arne182(s, msgarne182);
 
       delete msg;
     }
