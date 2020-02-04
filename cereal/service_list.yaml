@@ -85,6 +85,7 @@ liveTrafficData: [8208, false, 100.]
 arne182Status: [8209, false, 100.]
 latControl: [8210, false, 20.]
 phantomData: [8211, false, 20.]
+thermalonline: [8212, false, 1., 1]
 
 #alca Events
 alcaStatus: [8212, false, 0.]

@@ -134,6 +134,7 @@ ThermalStatus = cereal.log.ThermalData.ThermalStatus
 # comment out anything you don't want to run
 managed_processes = {
   "thermald": "selfdrive.thermald",
+  "thermalonlined": "selfdrive.thermalonlined",
   "uploader": "selfdrive.loggerd.uploader",
   "deleter": "selfdrive.loggerd.deleter",
   "controlsd": "selfdrive.controls.controlsd",
@@ -205,6 +206,7 @@ car_started_processes = [
   'proclogd',
   'ubloxd',
   'mapd',
+  'thermalonlined'
 ]
 if ANDROID:
   car_started_processes += [

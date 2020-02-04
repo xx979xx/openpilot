@@ -13,6 +13,7 @@
 #include "messaging.hpp"
 
 #include "cereal/gen/c/log.capnp.h"
+#include "cereal/gen/c/arne182.capnp.h"
 
 #include "sound.hpp"
 
@@ -173,6 +174,7 @@ typedef struct UIState {
 
   // sockets
   Context *ctx;
+  Context *ctxarne182;
   SubSocket *model_sock;
   SubSocket *controlsstate_sock;
   SubSocket *livecalibration_sock;
@@ -181,6 +183,7 @@ typedef struct UIState {
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
   Poller * poller;
+  Poller * pollerarne182;
 
   int active_app;
 
