@@ -94,19 +94,19 @@ ALERTS = [
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 2., 3.),
   
-	Alert(
-    "waitingMode",
-    "WAITING...",
-    "Press gas/resume to gain full control!",
-    AlertStatus.userPrompt, AlertSize.mid,
-    Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
+  Alert(
+      "waitingMode",
+      "WAITING...",
+      "Press gas/resume to gain full control!",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
 
   Alert(
-    "longControlDisabled",
-    "BRAKE PRESSED",
-    "Longitudinal Control Disabled",
-    AlertStatus.userPrompt, AlertSize.mid,
-    Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
+      "longControlDisabled",
+      "BRAKE PRESSED",
+      "Longitudinal Control Disabled",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
   
   Alert(
       "steerTempUnavailable",
@@ -190,7 +190,7 @@ ALERTS = [
       "Be ready to take over at any time",
       "Always keep hands on wheel and eyes on road",
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., 10.),
+      Priority.LOW_LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
 
   Alert(
       "startupNoControl",
