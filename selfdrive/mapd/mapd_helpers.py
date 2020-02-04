@@ -526,7 +526,7 @@ class Way:
     if points is None:
       points = self.points_in_car_frame(lat, lon, heading, True)
     x = points[:, 0]
-    return np.min(x) < 0. and np.max(x) >= 0.
+    return np.min(x) <= 0. and np.max(x) > 0.
 
   def closest_point(self, lat, lon, heading, points=None):
     if points is None:
