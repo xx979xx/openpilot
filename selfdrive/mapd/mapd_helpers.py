@@ -234,7 +234,7 @@ class Way:
 
       # With a factor of 60 a 20m offset causes the same error as a 20 degree heading error
       # (A 20 degree heading offset results in an a of about 1/3)
-      score = abs(a) * abs(b) * 3. + abs(b)
+      score = abs(a) * (abs(b) + 1) * 3. + abs(b)
 
       # Prefer same type of road
       if prev_way is not None:
