@@ -208,8 +208,10 @@ class Way:
       x = points[:, 0]
       y = points[:, 1]
       angles = np.arctan2(y, x)
-      front = np.logical_and((-np.pi / 2) < angles,
-                                angles < (np.pi / 2))
+      front = np.logical_and((-np.pi / 2) < angles, angles < (np.pi / 2))
+      if all(front):
+        angles[angles==0] = np.pi
+        front = np.logical_and((-np.pi / 2) < angles,angles < (np.pi / 2))
       behind = np.logical_not(front)
 
       dists = np.linalg.norm(points, axis=1)
@@ -232,7 +234,7 @@ class Way:
 
       # With a factor of 60 a 20m offset causes the same error as a 20 degree heading error
       # (A 20 degree heading offset results in an a of about 1/3)
-      score = abs(a) * 60. + abs(b)
+      score = abs(a) * abs(b) * 3. + abs(b)
 
       # Prefer same type of road
       if prev_way is not None:
