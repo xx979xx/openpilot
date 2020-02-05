@@ -34,19 +34,21 @@ RIGHT_BLINDSPOT = '\x42'
 BLINDSPOTDEBUG = True
 BLINDSPOTALWAYSON = False
 
+
 def set_blindspot_debug_mode(lr,enable):
   if enable:
     m = lr + "\x02\x10\x60\x00\x00\x00\x00"
   else:
     m = lr + "\x02\x10\x01\x00\x00\x00\x00"
-  return make_can_msg(1872, m, 0, False)
+  return make_can_msg(1872, m, 0)
+
 
 def poll_blindspot_status(lr):
   m = lr + "\x02\x21\x69\x00\x00\x00\x00"
-  return make_can_msg(1872, m, 0, False)
+  return make_can_msg(1872, m, 0)
+
 
 def accel_hysteresis(accel, accel_steady, enabled):
-
   # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
   if not enabled:
     # send 0 when disabled, otherwise acc faults
