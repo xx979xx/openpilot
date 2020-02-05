@@ -54,6 +54,14 @@ def get_can_parser(CP):
     ("IPAS_STATE", "EPS_STATUS", 1),
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
+    ("BLINDSPOT","DEBUG", 0),
+    ("BLINDSPOTSIDE","DEBUG",65),
+    ("BLINDSPOTD1","DEBUG", 0),
+    ("BLINDSPOTD2","DEBUG", 0),
+    ("ACC_DISTANCE", "JOEL_ID", 2),
+    ("LANE_WARNING", "JOEL_ID", 1),
+    ("ACC_SLOW", "JOEL_ID", 0),
+    ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
   ]
 
   checks = [
@@ -216,6 +224,19 @@ class CarState():
       self.gasbuttonstatus = 0
     msg = messaging_arne.new_message()
     msg.init('arne182Status')
+    if cp.vl["DEBUG"]['BLINDSPOTSIDE']==65: #Left
+      if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
+        msg.arne182Status.leftBlindspot = bool(1)
+        print("Left Blindspot Detected")
+      else:
+        msg.arne182Status.leftBlindspot = bool(0)
+    elif  cp.vl["DEBUG"]['BLINDSPOTSIDE']==66: #Right
+      if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
+        msg.arne182Status.rightBlindspot = bool(1)
+        print("Right Blindspot Detected")
+      else:
+        msg.arne182Status.rightBlindspot = bool(0)
+    
     msg.arne182Status.gasbuttonstatus = self.gasbuttonstatus
     if not travis:
       self.arne_pm.send('arne182Status', msg)
