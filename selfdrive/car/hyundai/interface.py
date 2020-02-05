@@ -15,9 +15,7 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
-    self.idx = 0
-    self.lanes = 0
-    self.lkas_request = 0
+    self.frame = 0
 
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
@@ -45,7 +43,6 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "hyundai"
     ret.carFingerprint = candidate
     ret.isPandaBlack = has_relay
-    ret.radarOffCan = True
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
     ret.enableCruise = True  # stock acc
 
@@ -54,15 +51,13 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     tire_stiffness_factor = 1.
 
-    if candidate == CAR.SANTA_FE:
+    if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.766
-
       # Values from optimizer
       ret.steerRatio = 16.55  # 13.8 is spec end-to-end
       tire_stiffness_factor = 0.82
-
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.35], [0.05, 0.09]]
       ret.minSteerSpeed = 0.
@@ -74,7 +69,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 0.
-    elif candidate == CAR.ELANTRA:
+    elif candidate in [CAR.ELANTRA, CAR.ELANTRA_GT_I30]:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
@@ -90,8 +85,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
-      ret.minSteerSpeed = 35 * CV.MPH_TO_MS
-    elif candidate == CAR.KIA_OPTIMA:
+      ret.minSteerSpeed = 60 * CV.KPH_TO_MS
+    elif candidate in [CAR.GENESIS_G90, CAR.GENESIS_G80]:
+      ret.mass = 2200
+      ret.wheelbase = 3.15
+      ret.steerRatio = 12.069
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
+    elif candidate in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3558. * CV.LB_TO_KG
       ret.wheelbase = 2.80
@@ -107,6 +108,40 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 0.
+    elif candidate == CAR.KONA:
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.mass = 1275. + STD_CARGO_KG
+      ret.wheelbase = 2.7
+      ret.steerRatio = 13.73   #Spec
+      tire_stiffness_factor = 0.385
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate == CAR.IONIQ:
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.mass = 1275. + STD_CARGO_KG
+      ret.wheelbase = 2.7
+      ret.steerRatio = 13.73   #Spec
+      tire_stiffness_factor = 0.385
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate == CAR.IONIQ_EV_LTD:
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.mass = 1490. + STD_CARGO_KG   #weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
+      ret.wheelbase = 2.7
+      ret.steerRatio = 13.73   #Spec
+      tire_stiffness_factor = 0.385
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      ret.minSteerSpeed = 32 * CV.MPH_TO_MS
+    elif candidate == CAR.KIA_FORTE:
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.mass = 3558. * CV.LB_TO_KG
+      ret.wheelbase = 2.80
+      ret.steerRatio = 13.75
+      tire_stiffness_factor = 0.5
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+
 
     ret.minEnableSpeed = -1.   # enable is done by stock ACC, so ignore this
     ret.longitudinalTuning.kpBP = [0.]
@@ -172,12 +207,7 @@ class CarInterface(CarInterfaceBase):
     ret.wheelSpeeds.rr = self.CS.v_wheel_rr
 
     # gear shifter
-    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
-      ret.gearShifter = self.CS.gear_shifter_cluster
-    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
-      ret.gearShifter = self.CS.gear_tcu
-    else:
-      ret.gearShifter = self.CS.gear_shifter
+    ret.gearShifter = self.CS.gear_shifter
 
     # gas pedal
     ret.gas = self.CS.car_gas
@@ -227,9 +257,9 @@ class CarInterface(CarInterfaceBase):
     ret.seatbeltUnlatched = not self.CS.seatbelt
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-    if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
+    if ret.vEgo < (self.CP.minSteerSpeed + 0.2) and self.CP.minSteerSpeed > 10.:
       self.low_speed_alert = True
-    if ret.vEgo > (self.CP.minSteerSpeed + 4.):
+    if ret.vEgo > (self.CP.minSteerSpeed + 0.7):
       self.low_speed_alert = False
 
     events = []
@@ -245,7 +275,7 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == GearShifter.reverse:
       events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
-    if self.CS.steer_error:
+    if self.CS.steer_error or abs(self.CS.angle_steers) > 90.:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
 
     if ret.cruiseState.enabled and not self.cruise_enabled_prev:
@@ -273,10 +303,8 @@ class CarInterface(CarInterfaceBase):
     return ret.as_reader()
 
   def apply(self, c):
-
-    hud_alert = get_hud_alerts(c.hudControl.visualAlert)
-
-    can_sends = self.CC.update(c.enabled, self.CS, c.actuators,
-                               c.cruiseControl.cancel, hud_alert)
-
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+                               c.cruiseControl.cancel, c.hudControl.visualAlert, c.hudControl.leftLaneVisible,
+                               c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
+    self.frame += 1
     return can_sends
