@@ -11,10 +11,11 @@ from cereal import log
 
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
+LaneChangeBSM = log.PathPlan.LaneChangeBSM
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
 
-LANE_CHANGE_SPEED_MIN = 45 * CV.MPH_TO_MS
+LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 
 DESIRES = {
@@ -58,6 +59,9 @@ class PathPlanner():
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
     self.prev_one_blinker = False
+    self.pre_auto_LCA_timer = 0.0
+    self.lane_change_BSM = LaneChangeBSM.off
+    self.prev_torque_applied = False
 
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
@@ -82,6 +86,9 @@ class PathPlanner():
 
     angle_offset = sm['liveParameters'].angleOffset
 
+    lca_left = sm['carState'].lcaLeft
+    lca_right = sm['carState'].lcaRight
+
     # Run MPC
     self.angle_steers_des_prev = self.angle_steers_des_mpc
     VM.update_params(sm['liveParameters'].stiffnessFactor, sm['liveParameters'].steerRatio)
@@ -102,9 +109,19 @@ class PathPlanner():
       self.lane_change_state = LaneChangeState.off
       self.lane_change_direction = LaneChangeDirection.none
     else:
-      torque_applied = sm['carState'].steeringPressed and \
-                       ((sm['carState'].steeringTorque > 0 and self.lane_change_direction == LaneChangeDirection.left) or \
-                        (sm['carState'].steeringTorque < 0 and self.lane_change_direction == LaneChangeDirection.right))
+      if sm['carState'].leftBlinker:
+        lane_change_direction = LaneChangeDirection.left
+      elif sm['carState'].rightBlinker:
+        lane_change_direction = LaneChangeDirection.right
+
+      if lane_change_direction == LaneChangeDirection.left:
+        torque_applied = sm['carState'].steeringTorque > 0 and sm['carState'].steeringPressed
+        if CP.autoLcaEnabled and 2.5 > self.pre_auto_LCA_timer > 2.0 and not lca_left:
+          torque_applied = True # Enable auto LCA only once after 2 sec 
+      else:
+        torque_applied = sm['carState'].steeringTorque < 0 and sm['carState'].steeringPressed
+        if CP.autoLcaEnabled and 2.5 > self.pre_auto_LCA_timer > 2.0 and not lca_right:
+          torque_applied = True # Enable auto LCA only once after 2 sec 
 
       lane_change_prob = self.LP.l_lane_change_prob + self.LP.r_lane_change_prob
 
@@ -112,17 +129,39 @@ class PathPlanner():
       # off
       if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
         self.lane_change_state = LaneChangeState.preLaneChange
-
+     
       # pre
       elif self.lane_change_state == LaneChangeState.preLaneChange:
         if not one_blinker or below_lane_change_speed:
-          self.lane_change_state = LaneChangeState.off
+          self.lane_change_state = LaneChangeState.off   
         elif torque_applied:
-          self.lane_change_state = LaneChangeState.laneChangeStarting
+          if self.prev_torque_applied or lane_change_direction == LaneChangeDirection.left and not lca_left or \
+                  lane_change_direction == LaneChangeDirection.right and not lca_right:
+            self.lane_change_state = LaneChangeState.laneChangeStarting
+          else:
+            if self.pre_auto_LCA_timer < 10.:
+              self.pre_auto_LCA_timer = 10.
+        else:
+          if self.pre_auto_LCA_timer > 10.3:
+            self.prev_torque_applied = True
+
+      # bsm
+      elif self.lane_change_state == LaneChangeState.laneChangeStarting:
+        if lca_left and lane_change_direction == LaneChangeDirection.left and not self.prev_torque_applied:
+          self.lane_change_BSM = LaneChangeBSM.left
+          self.lane_change_state = LaneChangeState.preLaneChange
+        elif lca_right and lane_change_direction == LaneChangeDirection.right and not self.prev_torque_applied:
+          self.lane_change_BSM = LaneChangeBSM.right
+          self.lane_change_state = LaneChangeState.preLaneChange
+        else:
+          # starting
+          self.lane_change_BSM = LaneChangeBSM.off
+          if self.lane_change_state == LaneChangeState.laneChangeStarting and lane_change_prob > 0.5:
+            self.lane_change_state = LaneChangeState.laneChangeFinishing
 
       # starting
-      elif self.lane_change_state == LaneChangeState.laneChangeStarting and lane_change_prob > 0.5:
-        self.lane_change_state = LaneChangeState.laneChangeFinishing
+      #elif self.lane_change_state == LaneChangeState.laneChangeStarting and lane_change_prob > 0.5:
+        #self.lane_change_state = LaneChangeState.laneChangeFinishing
 
       # finishing
       elif self.lane_change_state == LaneChangeState.laneChangeFinishing and lane_change_prob < 0.2:
@@ -133,8 +172,20 @@ class PathPlanner():
 
     if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
       self.lane_change_timer = 0.0
+      if self.lane_change_BSM == LaneChangeBSM.right:
+        if not lca_right:
+          self.lane_change_BSM = LaneChangeBSM.off
+      if self.lane_change_BSM == LaneChangeBSM.left:
+        if not lca_left:
+          self.lane_change_BSM = LaneChangeBSM.off
     else:
       self.lane_change_timer += DT_MDL
+
+    if self.lane_change_state == LaneChangeState.off:
+      self.pre_auto_LCA_timer = 0.0
+      self.prev_torque_applied = False
+    elif not (3. < self.pre_auto_LCA_timer < 10.): # stop afer 3 sec resume from 10 when torque applied
+      self.pre_auto_LCA_timer += DT_MDL
 
     self.prev_one_blinker = one_blinker
 
@@ -217,6 +268,7 @@ class PathPlanner():
     plan_send.pathPlan.desire = desire
     plan_send.pathPlan.laneChangeState = self.lane_change_state
     plan_send.pathPlan.laneChangeDirection = self.lane_change_direction
+    plan_send.pathPlan.laneChangeBSM = self.lane_change_BSM
 
     pm.send('pathPlan', plan_send)
 
