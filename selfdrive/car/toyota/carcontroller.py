@@ -29,22 +29,22 @@ TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
               0x383]
 
 # Blindspot codes
-LEFT_BLINDSPOT = '\x41'
-RIGHT_BLINDSPOT = '\x42'
+LEFT_BLINDSPOT = b'\x41'
+RIGHT_BLINDSPOT = b'\x42'
 BLINDSPOTDEBUG = True
 BLINDSPOTALWAYSON = False
 
 
 def set_blindspot_debug_mode(lr,enable):
   if enable:
-    m = lr + "\x02\x10\x60\x00\x00\x00\x00"
+    m = lr + b"\x02\x10\x60\x00\x00\x00\x00"
   else:
-    m = lr + "\x02\x10\x01\x00\x00\x00\x00"
+    m = lr + b"\x02\x10\x01\x00\x00\x00\x00"
   return make_can_msg(1872, m, 0)
 
 
 def poll_blindspot_status(lr):
-  m = lr + "\x02\x21\x69\x00\x00\x00\x00"
+  m = lr + b"\x02\x21\x69\x00\x00\x00\x00"
   return make_can_msg(1872, m, 0)
 
 
