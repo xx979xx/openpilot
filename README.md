@@ -71,6 +71,7 @@ Supported Cars
 | Chrysler  | Pacifica Hybrid 2019-20       | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Chrysler  | Pacifica Hybrid 2019          | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Genesis   | G80 2018<sup>1</sup>          | All               | Stock            | 0mph               | 0mph         |
+| Genesis   | G90 2018<sup>1</sup>          | All               | Stock            | 0mph               | 0mph         |
 | Honda     | Accord 2018-19                | All               | Stock            | 0mph               | 3mph         |
 | Honda     | Accord Hybrid 2018-19         | All               | Stock            | 0mph               | 3mph         |
 | Honda     | Civic Hatchback 2017-19       | Honda Sensing     | Stock            | 0mph               | 12mph        |
