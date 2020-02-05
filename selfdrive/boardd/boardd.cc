@@ -66,7 +66,7 @@ cereal::HealthData::HwType hw_type = cereal::HealthData::HwType::UNKNOWN;
 bool is_pigeon = false;
 const uint32_t NO_IGNITION_CNT_MAX = 2 * 60 * 60 * 30;  // turn off charge after 30 hrs
 const float VBATT_START_CHARGING = 11.5;
-const float VBATT_PAUSE_CHARGING = 11.0;
+const float VBATT_PAUSE_CHARGING = 10.5;
 float voltage_f = 12.5;  // filtered voltage
 uint32_t no_ignition_cnt = 0;
 bool connected_once = false;
@@ -407,8 +407,6 @@ void can_health(PubSocket *publisher) {
     pthread_mutex_lock(&usb_lock);
     libusb_control_transfer(dev_handle, 0xc0, 0xe6, (uint16_t)(cereal::HealthData::UsbPowerMode::CLIENT), 0, NULL, 0, TIMEOUT);
     pthread_mutex_unlock(&usb_lock);
-    printf("POWER DOWN DEVICE\n");
-    system("service call power 17 i32 0 i32 1");
   }
   if (!no_ignition_exp && (voltage_f > VBATT_START_CHARGING) && !cdp_mode) {
     printf("TURN ON CHARGING!\n");
