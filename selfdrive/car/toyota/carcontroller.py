@@ -31,7 +31,7 @@ TARGET_IDS = [0x340, 0x341, 0x342, 0x343, 0x344, 0x345,
 # Blindspot codes
 LEFT_BLINDSPOT = b'\x41'
 RIGHT_BLINDSPOT = b'\x42'
-BLINDSPOTALWAYSON = True
+BLINDSPOTALWAYSON = False
 
 
 def set_blindspot_debug_mode(lr,enable):
@@ -250,10 +250,10 @@ class CarController():
           can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, True))
           print("debug Right blindspot debug enabled")
           self.blindspot_debug_enabled_right = True
-        else:
-          can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
-          self.blindspot_debug_enabled_right = False
-          print("debug Right blindspot debug disabled")
+      if CS.v_ego < 6 and self.blindspot_debug_enabled_right: # if enabled and speed falls below 6m/s
+        can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
+        self.blindspot_debug_enabled_right = False
+        print("debug Right blindspot debug disabled")
     if self.blindspot_debug_enabled_left:
       if frame % 20 == 0 and frame > 1001:  # Poll blindspots at 5 Hz
         can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
