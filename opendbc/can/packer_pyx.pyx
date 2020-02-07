@@ -64,4 +64,4 @@ cdef class CANPacker:
       addr, size = self.name_to_address_and_size[name_or_addr.encode('utf8')]
     cdef uint64_t val = self.pack(addr, values, counter)
     val = self.ReverseBytes(val)
-    return [addr, 0, (<char *>&val)[:size], bus]
+    return [addr, 0, <bytes>val, bus]
