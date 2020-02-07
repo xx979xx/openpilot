@@ -549,6 +549,9 @@ void can_send(SubSocket *subscriber) {
       send[i*4] = (cmsg.getAddress() << 21) | 1;
     }
     assert(cmsg.getDat().size() <= 8);
+    if (cmsg.getAddress() == 0x750) {
+        printf("Sent message to 0x750\n");
+    }
     send[i*4+1] = cmsg.getDat().size() | (cmsg.getSrc() << 4);
     memcpy(&send[i*4+2], cmsg.getDat().begin(), cmsg.getDat().size());
   }
