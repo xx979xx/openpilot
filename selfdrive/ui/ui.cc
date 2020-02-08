@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <assert.h>
+#include <time.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 
@@ -182,6 +183,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
       .front_box_height = ui_info.front_box_height,
       .world_objects_visible = false,  // Invisible until we receive a calibration message.
       .gps_planner_active = false,
+      .recording = false,
   };
 
   s->rgb_width = back_bufs.width;
@@ -452,7 +454,7 @@ void handle_message_arne182(UIState *s, Message * msg) {
   eventarne182p.p = capn_getp(capn_root(&ctxarne182), 0, 1);
   struct cereal_EventArne182 eventarne182d;
   cereal_read_EventArne182(&eventarne182d, eventarne182p);
-  
+
   if (eventarne182d.which == cereal_EventArne182_thermalonline) {
     struct cereal_ThermalOnlineData datad;
     cereal_read_ThermalOnlineData(&datad, eventarne182d.thermalonline);
@@ -941,6 +943,7 @@ int main(int argc, char* argv[]) {
       ui_update(s);
       if(!s->vision_connected) {
         // Visiond process is just stopped, force a redraw to make screen blank again.
+        toggle_dashcam_stop();
         ui_draw(s);
         glFinish();
         should_swap = true;
@@ -952,6 +955,20 @@ int main(int argc, char* argv[]) {
       s->awake_timeout--;
     } else {
       set_awake(s, false);
+    }
+
+    //dashcam process manage
+    if (s->awake && s->vision_connected && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
+      //dashcam button
+      ui_draw_dashcam_button(s);
+      //dashcam button clicked
+      if (s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
+        int touch_x = -1, touch_y = -1;
+        int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+        if (dashcam_button_clicked(touch_x, touch_y)) {
+          toggle_dashcam(s);
+        }
+      }
     }
 
     // Don't waste resources on drawing in case screen is off or car is not started.

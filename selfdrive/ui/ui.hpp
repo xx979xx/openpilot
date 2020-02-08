@@ -86,7 +86,7 @@ typedef struct UIScene {
   uint64_t v_cruise_update_ts;
   float v_ego;
   bool decel_for_model;
-  
+
   float gpsAccuracy;
   float speedlimit;
   float angleSteers;
@@ -119,6 +119,8 @@ typedef struct UIScene {
   float alert_blinkingrate;
 
   float awareness_status;
+
+  bool recording;
 
   // Used to show gps planner status
   bool gps_planner_active;
@@ -267,7 +269,7 @@ typedef struct UIState {
 
 // API
 void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
-                          const char* va_text1, const char* va_text2); 
+                          const char* va_text1, const char* va_text2);
 void ui_draw(UIState *s);
 void ui_nvg_init(UIState *s);
 
