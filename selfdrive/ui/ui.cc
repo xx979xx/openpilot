@@ -1011,7 +1011,7 @@ int main(int argc, char* argv[]) {
     //dashcam process manage
     if (s->awake && s->vision_connected && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
       //dashcam button
-      ui_draw_dashcam_button(s);
+      //ui_draw_dashcam_button(s);
       //dashcam button clicked
       if (s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
         int touch_x = -1, touch_y = -1;
