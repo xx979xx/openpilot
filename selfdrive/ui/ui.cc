@@ -214,6 +214,57 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->limit_set_speed_timeout = UI_FREQ;
 }
 
+struct tm get_time_struct() {
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  return tm;
+}
+
+bool dashcam_button_clicked(int touch_x, int touch_y) {
+  if (touch_x >= 1660 && touch_x <= 1810) {
+    if (touch_y >= 885 && touch_y <= 1035) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+void toggle_dashcam_start() {
+  const char *dashcam_root = "/data/media/0/dashcam/";
+  char *env_dashcam_root = getenv("DASHCAM_ROOT");
+  dashcam_root = env_dashcam_root ? env_dashcam_root : dashcam_root;
+
+  // NOTE: make sure dashcam_root folder exists on the device!
+  struct stat st = {0};
+  if (stat(dashcam_root, &st) == -1) {
+    umask(0);
+    mkdir(dashcam_root, 0777);
+  }
+
+  char cmd[128];
+  char filename[64];
+  struct tm tm = get_time_struct();
+  snprintf(filename, sizeof(filename), "%04d%02d%02d_%02d%02d%02d.mp4", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  snprintf(cmd, sizeof(cmd), "/data/openpilot/selfdrive/ui/screenrecord --bit-rate 2560000 %s%s&", dashcam_root, filename);
+
+  system(cmd);
+}
+
+void toggle_dashcam_stop() {
+  system("killall -SIGINT screenrecord");
+}
+
+void toggle_dashcam(UIState *s) {
+  if (s->scene.recording) {
+    toggle_dashcam_stop();
+    s->scene.recording = false;
+  } else {
+    toggle_dashcam_start();
+    s->scene.recording = true;
+  }
+}
+
 static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
   PathData ret = {0};
 
