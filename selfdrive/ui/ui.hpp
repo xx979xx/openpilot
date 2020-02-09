@@ -128,6 +128,11 @@ typedef struct UIScene {
   // Brake Lights
   bool brakeLights;
 
+  // kegman blinker
+  bool leftBlinker;
+  bool rightBlinker;
+  int blinker_blinkingrate;
+
   // dev ui
   float angleSteersDes;
   float pa0;
