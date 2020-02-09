@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <assert.h>
+#include <time.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
 
@@ -182,6 +183,7 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
       .front_box_height = ui_info.front_box_height,
       .world_objects_visible = false,  // Invisible until we receive a calibration message.
       .gps_planner_active = false,
+      .recording = false,
   };
 
   s->rgb_width = back_bufs.width;
@@ -210,6 +212,57 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->longitudinal_control_timeout = UI_FREQ / 3;
   s->is_metric_timeout = UI_FREQ / 2;
   s->limit_set_speed_timeout = UI_FREQ;
+}
+
+struct tm get_time_struct() {
+  time_t t = time(NULL);
+  struct tm tm = *localtime(&t);
+  return tm;
+}
+
+bool dashcam_button_clicked(int touch_x, int touch_y) {
+  if (touch_x >= 1660 && touch_x <= 1810) {
+    if (touch_y >= 885 && touch_y <= 1035) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+void toggle_dashcam_start() {
+  const char *dashcam_root = "/data/media/0/dashcam/";
+  char *env_dashcam_root = getenv("DASHCAM_ROOT");
+  dashcam_root = env_dashcam_root ? env_dashcam_root : dashcam_root;
+
+  // NOTE: make sure dashcam_root folder exists on the device!
+  struct stat st = {0};
+  if (stat(dashcam_root, &st) == -1) {
+    umask(0);
+    mkdir(dashcam_root, 0777);
+  }
+
+  char cmd[128];
+  char filename[64];
+  struct tm tm = get_time_struct();
+  snprintf(filename, sizeof(filename), "%04d%02d%02d_%02d%02d%02d.mp4", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+  snprintf(cmd, sizeof(cmd), "/data/openpilot/selfdrive/ui/screenrecord --bit-rate 2560000 %s%s&", dashcam_root, filename);
+
+  system(cmd);
+}
+
+void toggle_dashcam_stop() {
+  system("killall -SIGINT screenrecord");
+}
+
+void toggle_dashcam(UIState *s) {
+  if (s->scene.recording) {
+    toggle_dashcam_stop();
+    s->scene.recording = false;
+  } else {
+    toggle_dashcam_start();
+    s->scene.recording = true;
+  }
 }
 
 static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
@@ -452,7 +505,7 @@ void handle_message_arne182(UIState *s, Message * msg) {
   eventarne182p.p = capn_getp(capn_root(&ctxarne182), 0, 1);
   struct cereal_EventArne182 eventarne182d;
   cereal_read_EventArne182(&eventarne182d, eventarne182p);
-  
+
   if (eventarne182d.which == cereal_EventArne182_thermalonline) {
     struct cereal_ThermalOnlineData datad;
     cereal_read_ThermalOnlineData(&datad, eventarne182d.thermalonline);
@@ -941,6 +994,7 @@ int main(int argc, char* argv[]) {
       ui_update(s);
       if(!s->vision_connected) {
         // Visiond process is just stopped, force a redraw to make screen blank again.
+        toggle_dashcam_stop();
         ui_draw(s);
         glFinish();
         should_swap = true;
@@ -952,6 +1006,20 @@ int main(int argc, char* argv[]) {
       s->awake_timeout--;
     } else {
       set_awake(s, false);
+    }
+
+    //dashcam process manage
+    if (s->awake && s->vision_connected && s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
+      //dashcam button
+      //ui_draw_dashcam_button(s);
+      //dashcam button clicked
+      if (s->active_app == cereal_UiLayoutState_App_home && s->status != STATUS_STOPPED) {
+        int touch_x = -1, touch_y = -1;
+        int touched = touch_poll(&touch, &touch_x, &touch_y, s->awake ? 0 : 100);
+        if (dashcam_button_clicked(touch_x, touch_y)) {
+          toggle_dashcam(s);
+        }
+      }
     }
 
     // Don't waste resources on drawing in case screen is off or car is not started.
