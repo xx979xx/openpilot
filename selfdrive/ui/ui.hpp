@@ -122,6 +122,10 @@ typedef struct UIScene {
 
   bool recording;
 
+  // gernby pathcoloring
+  float output_scale;
+  bool steerOverride;
+
   // Used to show gps planner status
   bool gps_planner_active;
 
@@ -187,6 +191,7 @@ typedef struct UIState {
   SubSocket *livecalibration_sock;
   SubSocket *radarstate_sock;
   SubSocket *carstate_sock;
+  SubSocket *livempc_sock;
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
   Poller * poller;
