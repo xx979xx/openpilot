@@ -2,7 +2,7 @@
 
 This README describes the custom features build by me (Arne Schwarck) on top of [openpilot](http://github.com/commaai/openpilot) of [comma.ai](http://comma.ai). This fork is optimized for the Toyota RAV4 Hybrid 2016 and for driving in Germany but also works with other cars and in other countries. If you would like to support the developement on this project feel free to https://www.patreon.com/arneschwarck 
 - [ ] TODO describe which other cars and countries are known
-[![](https://i.imgur.com/xY2gdHv.png)](#)
+[![](https://i.imgur.com/UelUjKAh.png)](#)
 
 For a demo of this version of openpilot check the video below:
 [![demo of openpilot with this branch](https://img.youtube.com/vi/WKwSq8TPdpo/0.jpg)](https://www.youtube.com/playlist?list=PL3CGUyxys8DuTE1JTkdZwY93ejSfAGxyV)
