@@ -14,7 +14,7 @@ def generate_random_can_data_list():
   cnt = random.randint(1, 64)
   for j in range(cnt):
     can_data = np.random.bytes(random.randint(1, 8))
-    can_list.append([str.encode(str(random.randint(0, 128))), str.encode(str(random.randint(0, 128))), can_data, str.encode(str(random.randint(0, 128)))])
+    can_list.append([random.randint(0, 128), random.randint(0, 128), can_data, random.randint(0, 128)])
   return can_list, cnt
 
 
