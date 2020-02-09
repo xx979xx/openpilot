@@ -335,7 +335,13 @@ void handle_message(UIState *s, Message * msg) {
 
     struct cereal_ControlsState_LateralPIDState pdata;
     cereal_read_ControlsState_LateralPIDState(&pdata, datad.lateralControlState.pidState);
+    
+    struct cereal_ControlsState_LateralLQRState qdata;
+    cereal_read_ControlsState_LateralLQRState(&qdata, datad.lateralControlState.lqrState);
 
+    struct cereal_ControlsState_LateralINDIState rdata;
+    cereal_read_ControlsState_LateralINDIState(&rdata, datad.lateralControlState.indiState);
+    
     s->controls_timeout = 1 * UI_FREQ;
     s->controls_seen = true;
 
@@ -352,7 +358,7 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.gps_planner_active = datad.gpsPlannerActive;
     s->scene.monitoring_active = datad.driverMonitoringOn;
     s->scene.steerOverride = datad.steerOverride;
-    s->scene.output_scale = pdata.output;
+    s->scene.output_scale = qdata.output + rdata.output + pdata.output;
 
     s->scene.frontview = datad.rearViewCam;
 
