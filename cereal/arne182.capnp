@@ -90,7 +90,7 @@ struct CarStateArne182 {
 
 
 struct Arne182Status { 
-  blindspot @0 :Bool;
+  rightBlindspot @0 :Bool;
   distanceToggle @1 :Float32;
   laneDepartureToggle @2 :Bool;
   accSlowToggle @3 :Bool;
@@ -98,6 +98,7 @@ struct Arne182Status {
   readdistancelines @5 :Float32;
   gasbuttonstatus @6 :Float32;
   lkMode @7 :Bool;
+  leftBlindspot@8 :Bool;
   }
 
 struct LiveTrafficData {
