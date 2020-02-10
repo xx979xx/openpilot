@@ -34,17 +34,17 @@ RIGHT_BLINDSPOT = b'\x42'
 BLINDSPOTALWAYSON = False
 
 
-#def set_blindspot_debug_mode(lr,enable):
-#  if enable:
-#    m = lr + b'\x02\x10\x60\x00\x00\x00\x00'
-#  else:
-#    m = lr + b'\x02\x10\x01\x00\x00\x00\x00'
-#  return make_can_msg(0x750, m, 0)
+def set_blindspot_debug_mode(lr,enable):
+  if enable:
+    m = lr + b'\x02\x10\x60\x00\x00\x00\x00'
+  else:
+    m = lr + b'\x02\x10\x01\x00\x00\x00\x00'
+  return make_can_msg(0x750, m, 0)
 
 
-#def poll_blindspot_status(lr):
-#  m = lr + b'\x02\x21\x69\x00\x00\x00\x00'
-#  return make_can_msg(0x750, m, 0)
+def poll_blindspot_status(lr):
+  m = lr + b'\x02\x21\x69\x00\x00\x00\x00'
+  return make_can_msg(0x750, m, 0)
 
 
 def accel_hysteresis(accel, accel_steady, enabled):
@@ -298,41 +298,40 @@ class CarController():
         self.blindspot_blink_counter_left = 0
         self.blindspot_blink_counter_right = 0
         if self.blindspot_debug_enabled_left:
-          #can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
-          can_sends.append(make_can_msg(0x750, b'\x41\x02\x10\x01\x00\x00\x00\x00', 0))
+          can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
+          #can_sends.append(make_can_msg(0x750, b'\x41\x02\x10\x01\x00\x00\x00\x00', 0))
           self.blindspot_debug_enabled_left = False
           #print ("debug Left blindspot debug disabled")
         if self.blindspot_debug_enabled_right:
-          #can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
-          can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x01\x00\x00\x00\x00', 0))
+          can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
+          #can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x01\x00\x00\x00\x00', 0))
           self.blindspot_debug_enabled_right = False
           #print("debug Right blindspot debug disabled")
       if self.blindspot_blink_counter_left > 9 and not self.blindspot_debug_enabled_left: #check blinds
-        #can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
-        can_sends.append(make_can_msg(0x750, b'\x41\x02\x10\x60\x00\x00\x00\x00', 0))
+        can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
+        #can_sends.append(make_can_msg(0x750, b'\x41\x02\x10\x60\x00\x00\x00\x00', 0))
         #print("debug Left blindspot debug enabled")
         self.blindspot_debug_enabled_left = True
       if self.blindspot_blink_counter_right > 5 and not self.blindspot_debug_enabled_right: #enable blindspot debug mode
         if CS.v_ego > 6: #polling at low speeds switches camera off
-          can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x60\x00\x00\x00\x00', 0))
-          #can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, True))
+          #can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x60\x00\x00\x00\x00', 0))
+          can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, True))
           #print("debug Right blindspot debug enabled")
           self.blindspot_debug_enabled_right = True
       if CS.v_ego < 6 and self.blindspot_debug_enabled_right: # if enabled and speed falls below 6m/s
-        can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x01\x00\x00\x00\x00', 0))
-        #can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
+        #can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x01\x00\x00\x00\x00', 0))
+        can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
         self.blindspot_debug_enabled_right = False
         #print("debug Right blindspot debug disabled")
     if self.blindspot_debug_enabled_left:
       if frame % 20 == 0 and frame > 1001:  # Poll blindspots at 5 Hz
-        #can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
-        can_sends.append(make_can_msg(0x750, b'\x41\x02\x21\x69\x00\x00\x00\x00', 0))
+        can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
+        #can_sends.append(make_can_msg(0x750, b'\x41\x02\x21\x69\x00\x00\x00\x00', 0))
         #print("debug Left blindspot poll")
     if self.blindspot_debug_enabled_right:
       if frame % 20 == 10 and frame > 1005:  # Poll blindspots at 5 Hz
-        can_sends.append(make_can_msg(0x750, b'\x42\x02\x21\x69\x00\x00\x00\x00', 0))
-        #can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
+        #can_sends.append(make_can_msg(0x750, b'\x42\x02\x21\x69\x00\x00\x00\x00', 0))
+        can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
         #print("debug Right blindspot poll")
-        
         
     return can_sends
