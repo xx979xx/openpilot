@@ -13,7 +13,6 @@ from common.op_params import opParams
 LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 
-
 LANE_CHANGE_SPEED_MIN = 20 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
 
@@ -57,7 +56,7 @@ class PathPlanner():
     self.lane_change_state = LaneChangeState.off
     self.lane_change_timer = 0.0
     self.prev_one_blinker = False
-    
+
     self.op_params = opParams()
     self.alca_nudge_required = self.op_params.get('alca_nudge_required', default=True)
     self.alca_min_speed = self.op_params.get('alca_min_speed', default=20.0)
@@ -226,7 +225,6 @@ class PathPlanner():
 
     pm.send('pathPlan', plan_send)
 
-     
     dat = messaging.new_message()
     dat.init('liveMpc')
     dat.liveMpc.x = list(self.mpc_solution[0].x)
