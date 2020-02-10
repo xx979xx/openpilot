@@ -86,7 +86,7 @@ typedef struct UIScene {
   uint64_t v_cruise_update_ts;
   float v_ego;
   bool decel_for_model;
-  
+
   float gpsAccuracy;
   float speedlimit;
   float angleSteers;
@@ -120,11 +120,22 @@ typedef struct UIScene {
 
   float awareness_status;
 
+  bool recording;
+
+  // gernby pathcoloring
+  float output_scale;
+  bool steerOverride;
+
   // Used to show gps planner status
   bool gps_planner_active;
 
   // Brake Lights
   bool brakeLights;
+
+  // kegman blinker
+  bool leftBlinker;
+  bool rightBlinker;
+  int blinker_blinkingrate;
 
   // dev ui
   float angleSteersDes;
@@ -180,6 +191,7 @@ typedef struct UIState {
   SubSocket *livecalibration_sock;
   SubSocket *radarstate_sock;
   SubSocket *carstate_sock;
+  SubSocket *livempc_sock;
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
   Poller * poller;
@@ -267,7 +279,7 @@ typedef struct UIState {
 
 // API
 void ui_draw_vision_alert(UIState *s, int va_size, int va_color,
-                          const char* va_text1, const char* va_text2); 
+                          const char* va_text1, const char* va_text2);
 void ui_draw(UIState *s);
 void ui_nvg_init(UIState *s);
 

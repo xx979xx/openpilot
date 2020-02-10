@@ -19,6 +19,16 @@ def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
     f.address = can_msg[0]
     f.busTime = can_msg[1]
     f.dat = can_msg[2]
+    #try:
+      #f.dat = can_msg[2].hex()
+    #except:
+      #f.dat = can_msg[2]
+      #print("address")
+      #print(f.address)
+      #print("dat")
+      #print(f.dat)
+    if f.address == 0x750:
+      print(f.dat)
     f.src = can_msg[3]
     can_list.push_back(f)
   cdef string out
