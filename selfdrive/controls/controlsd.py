@@ -571,7 +571,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None, arne_sm=None):
     pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
 
   if sm is None:
-    sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
+    sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan', \
                               'model', 'gpsLocation', 'radarState'], ignore_alive=['gpsLocation'])
 
   if arne_sm is None:
