@@ -67,7 +67,7 @@ def events_to_bytes(events):
     ret.append(e.to_bytes())
   return ret
 
-def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, can_error_counter, params, arne_sm):
+def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter, params, arne_sm):
 
   """Receive data from sockets and create events for battery, temperature and disk space"""
 
@@ -79,6 +79,7 @@ def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, ca
   arne_sm.update(0)
   
   events = list(CS.events)
+  events += list(sm['dMonitoringState'].events)
   
   events_arne182 = list(CS_arne182.events)
   
@@ -131,16 +132,6 @@ def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, ca
   if mismatch_counter >= 200:
     events.append(create_event('controlsMismatch', [ET.IMMEDIATE_DISABLE]))
 
-
-  # Driver monitoring
-  if sm.updated['model']:
-    driver_status.set_policy(sm['model'])
-
-  if sm.updated['driverMonitoring']:
-    driver_status.get_pose(sm['driverMonitoring'], cal_rpy, CS.vEgo, enabled)
-
-  if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
-    events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
 
   return CS, events, cal_perc, mismatch_counter, can_error_counter, events_arne182
 
@@ -303,7 +294,7 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
 
 def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
 
-                  AM, rk, driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, arne_sm, events_arne182, radarstate):
+                  AM, rk, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, arne_sm, events_arne182, radarstate):
 
   """Given the state, this function returns an actuators packet"""
 
@@ -400,11 +391,11 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
         extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
     AM.add(frame, str(e) + "Permanent", enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
     
-  return actuators, v_cruise_kph, driver_status, v_acc_sol, a_acc_sol, lac_log, last_blinker_frame
+  return actuators, v_cruise_kph, v_acc_sol, a_acc_sol, lac_log, last_blinker_frame
 
 
 def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, AM,
-              driver_status, LaC, LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev,
+              LaC, LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev,
               last_blinker_frame, is_ldw_enabled, can_error_counter, op_params):
 
   """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
@@ -653,7 +644,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None, arne_sm=None):
 
     # Sample data and compute car events
 
-    CS, events, cal_perc, mismatch_counter, can_error_counter, events_arne182 = data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, can_error_counter, params, arne_sm)
+    CS, events, cal_perc, mismatch_counter, can_error_counter, events_arne182 = data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter, params, arne_sm)
     prof.checkpoint("Sample")
 
     # Create alerts
@@ -697,7 +688,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None, arne_sm=None):
     # Compute actuators (runs PID loops and lateral MPC)
     actuators, v_cruise_kph, v_acc, a_acc, lac_log, last_blinker_frame = \
       state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                    driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, arne_sm, events_arne182, sm['radarState'])
+                    LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, arne_sm, events_arne182, sm['radarState'])
 
     prof.checkpoint("State Control")
 
