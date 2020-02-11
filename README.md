@@ -21,7 +21,7 @@ Changes:
 ```python
     self.longcontrol = 1
 ```
-- <b>  Turning disable:</b> thank to Ku7: Openpilot will disable steering while turning signal on and speed below 60 kph, Enable again after 1 second. 
+- <b>  Turning disable:</b> thank to Ku7: Openpilot will disable steering while turning signal on and speed below 60 kph, Enable again after 1 second.
 - <b>  Increase driver monitoring timer</b>  
 - <b>  Disabling by LKAS button:</b> Openpilot will disable and enable steering by toggling LKAS button.
 - <b>  Setup Auto Detection:</b> Openpilot and Panda will detect MDPS, SCC and SAS buses and behaive acordingly.
@@ -48,6 +48,7 @@ To add new car or fingerprint, please make Pull Requset or send me the fingerpri
 | Hyundai   | Genesis 2018                       | All               | Stock            | 19mph              | 34mph        |
 | Hyundai   | Ioniq 2017<sup>5</sup>             | All               | Stock            | 0mph               | 34mph        |
 | Hyundai   | Kona 2017-19<sup>5</sup>           | LDWS              | Stock            | 22mph              | 0mph         |
+| Hyundai   | Palisade 2020<sup>5</sup>          | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019<sup>5</sup>          | All               | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2018<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph         |
 | Kia       | Optima 2017<sup>5</sup>            | SCC + LKAS/LDWS   | Stock            | 0mph               | 34mph        |
