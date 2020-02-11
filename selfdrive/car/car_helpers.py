@@ -1,7 +1,6 @@
 import os
 import threading
 import json
-from cereal import car
 from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
@@ -79,7 +78,7 @@ def fingerprint(logcan, sendcan, has_relay):
     cached_fingerprint = params.get('CachedFingerprint')
   else:
     cached_fingerprint = None
-    
+
   if car_params is not None:
     car_params = car.CarParams.from_bytes(car_params)
   if has_relay:
@@ -110,7 +109,7 @@ def fingerprint(logcan, sendcan, has_relay):
   frame_fingerprint = 10  # 0.1s
   car_fingerprint = None
   done = False
-  
+
   if cached_fingerprint is not None and use_car_caching:  # if we previously identified a car and fingerprint and user hasn't disabled caching
     cached_fingerprint = json.loads(cached_fingerprint)
     finger[0] = {key: value for key, value in cached_fingerprint[1].items()}
