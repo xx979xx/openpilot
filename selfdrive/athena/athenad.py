@@ -19,6 +19,7 @@ from selfdrive.loggerd.config import ROOT
 
 import cereal.messaging as messaging
 from common import android
+from common.basedir import PERSIST
 from common.api import Api
 from common.params import Params
 from cereal.services import service_list
@@ -188,10 +189,10 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
 @dispatcher.add_method
 def getPublicKey():
-  if not os.path.isfile('/persist/comma/id_rsa.pub'):
+  if not os.path.isfile(PERSIST+'/comma/id_rsa.pub'):
     return None
 
-  with open('/persist/comma/id_rsa.pub', 'r') as f:
+  with open(PERSIST+'/comma/id_rsa.pub', 'r') as f:
     return f.read()
 
 @dispatcher.add_method
@@ -204,8 +205,8 @@ def getSimInfo():
   network_type = android.getprop("gsm.network.type").split(',')
   mcc_mnc = android.getprop("gsm.sim.operator.numeric") or None
 
-  sim_id = android.parse_service_call_string(['iphonesubinfo', '11'])
-  cell_data_state = android.parse_service_call_unpack(['phone', '46'], ">q")
+  sim_id = android.parse_service_call_string(android.service_call(['iphonesubinfo', '11']))
+  cell_data_state = android.parse_service_call_unpack(android.service_call(['phone', '46']), ">q")
   cell_data_connected = (cell_data_state == 2)
 
   return {

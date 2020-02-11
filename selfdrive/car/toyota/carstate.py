@@ -13,14 +13,9 @@ from common.travis_checker import travis
 
 GearShifter = car.CarState.GearShifter
 
-def parse_gear_shifter(gear, vals):
-
-  val_to_capnp = {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
-                  'D': GearShifter.drive, 'B': GearShifter.brake}
-  try:
-    return val_to_capnp[vals[gear]]
-  except KeyError:
-    return GearShifter.unknown
+def parse_gear_shifter(gear):
+  return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
+              'D': GearShifter.drive, 'B': GearShifter.brake}.get(gear, GearShifter.unknown)
 
 
 def get_can_parser(CP):
