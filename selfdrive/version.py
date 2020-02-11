@@ -76,30 +76,22 @@ try:
     dirty = True
 except subprocess.CalledProcessError:
   try:
-    subprocess.check_call(["git", "update-index", "--refresh"])
-  except subprocess.CalledProcessError:
+    cloudlog.exception("git subprocess failed while finding version")
+ except:
     pass
-
-  if (origin is not None) and (branch is not None):
-    comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
-
-    dirty = not comma_remote
-    dirty = dirty or ('master' in branch)
-    dirty = dirty or (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
-
-    if dirty:
-      dirty_files = subprocess.check_output(["git", "diff-index", branch, "--"], encoding='utf8')
-      commit = subprocess.check_output(["git", "rev-parse", "--verify", "HEAD"], encoding='utf8').rstrip()
-      origin_commit = subprocess.check_output(["git", "rev-parse", "--verify", branch], encoding='utf8').rstrip()
-      cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch, dirty_files=dirty_files, commit=commit, origin_commit=origin_commit)
-
-except subprocess.CalledProcessError:
   dirty = True
-  cloudlog.exception("git subprocess failed while checking dirty")
 
+training_version = b"0.2.0"
+terms_version = b"2"
 
 if __name__ == "__main__":
   print("Dirty: %s" % dirty)
   print("Version: %s" % version)
   print("Remote: %s" % origin)
   print("Branch %s" % branch)
+
+
+  try:
+    print("Branch %s" % branch)
+  except NameError:
+    pass
