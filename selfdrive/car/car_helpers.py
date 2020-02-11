@@ -114,7 +114,8 @@ def fingerprint(logcan, sendcan, has_relay):
   if cached_fingerprint is not None and use_car_caching:  # if we previously identified a car and fingerprint and user hasn't disabled caching
     cached_fingerprint = json.loads(cached_fingerprint)
     finger[0] = {key: value for key, value in cached_fingerprint[1].items()}
-    return (str(cached_fingerprint[0]), finger, vin, car_fw)
+    source = car.CarParams.FingerprintSource.can
+    return (str(cached_fingerprint[0]), finger, vin, car_fw, source)
 
   while not done:
     a = messaging.get_one_can(logcan)
