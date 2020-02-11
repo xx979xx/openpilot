@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from cereal import car, arne182
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -102,7 +102,8 @@ class CarInterface(CarInterfaceBase):
 
     # create message
     ret = car.CarState.new_message()
-
+    ret_arne182 = arne182.CarStateArne182.new_message()
+    
     ret.canValid = self.pt_cp.can_valid and self.cam_cp.can_valid
 
     # speeds
@@ -160,6 +161,7 @@ class CarInterface(CarInterfaceBase):
 
 
     events = []
+    eventsArne182 = []
     if ret.seatbeltUnlatched:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
 
@@ -179,13 +181,13 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     ret.events = events
-
+    ret_arne182.events = eventsArne182
     # update previous brake/gas pressed
     self.gas_pressed_prev = ret.gasPressed
     self.acc_active_prev = self.CS.acc_active
 
     # cast to reader so it can't be modified
-    return ret.as_reader()
+    return ret.as_reader(), ret_arne182.as_reader()
 
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,

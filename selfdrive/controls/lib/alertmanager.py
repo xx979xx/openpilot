@@ -31,6 +31,10 @@ class AlertManager():
           cloudlog.event('alert_add', alert_type=alert_type, enabled=enabled)
 
     self.activealerts.append(added_alert)
+    
+    # on disable, wipe out all steering required alerts
+    if alert_type == 'disable':
+      self.activealerts = [a for a in self.activealerts if a.visual_alert != VisualAlert.steerRequired]
 
     # sort by priority first and then by start_time
     self.activealerts.sort(key=lambda k: (k.alert_priority, k.start_time), reverse=True)

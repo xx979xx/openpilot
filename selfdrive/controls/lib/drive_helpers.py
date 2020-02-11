@@ -1,12 +1,12 @@
-from cereal import car
+from cereal import car, arne182
 from common.numpy_fast import clip, interp
 from selfdrive.config import Conversions as CV
 
 # kph
-V_CRUISE_MAX = 144
-V_CRUISE_MIN = 8
-V_CRUISE_DELTA = 8
-V_CRUISE_ENABLE_MIN = 40
+V_CRUISE_MAX = 169
+V_CRUISE_MIN = 7
+V_CRUISE_DELTA = 7
+V_CRUISE_ENABLE_MIN = 7
 
 
 class MPC_COST_LAT:
@@ -41,6 +41,12 @@ def create_event(name, types):
     setattr(event, t, True)
   return event
 
+def create_event_arne(name, types):
+  event = arne182.CarEventArne182.new_message()
+  event.name = name
+  for t in types:
+    setattr(event, t, True)
+  return event
 
 def get_events(events, types):
   out = []

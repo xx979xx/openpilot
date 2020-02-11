@@ -80,10 +80,10 @@ routes = {
   #  'carFingerprint': CHRYSLER.PACIFICA_2018,
   #  'enableCamera': True,
   #},
-  "9f7a7e50a51fb9db|2019-01-17--18-34-21": {
-    'carFingerprint': CHRYSLER.JEEP_CHEROKEE,
-    'enableCamera': True,
-  },
+  #"9f7a7e50a51fb9db|2019-01-17--18-34-21": {
+  #  'carFingerprint': CHRYSLER.JEEP_CHEROKEE_2018,
+  #  'enableCamera': True,
+  #},
   "192a598e34926b1e|2019-04-04--13-27-39": {
     'carFingerprint': CHRYSLER.JEEP_CHEROKEE_2019,
     'enableCamera': True,
@@ -388,21 +388,21 @@ routes = {
     'enableCamera': False,
     'enableDsu': False,
   },
-  "2e07163a1ba9a780|2019-08-25--13-15-13": {
-    'carFingerprint': TOYOTA.LEXUS_IS,
-    'enableCamera': True,
-    'enableDsu': False,
-  },
-  "2e07163a1ba9a780|2019-08-29--09-35-42": {
-    'carFingerprint': TOYOTA.LEXUS_IS,
-    'enableCamera': False,
-    'enableDsu': False,
-  },
-  "1dd19ceed0ee2b48|2018-12-22--17-36-49": {
-    'carFingerprint': TOYOTA.LEXUS_IS, # 300 hybrid
-    'enableCamera': True,
-    'enableDsu': False,
-  },
+  #"2e07163a1ba9a780|2019-08-25--13-15-13": {
+  #  'carFingerprint': TOYOTA.LEXUS_IS,
+  #  'enableCamera': True,
+  #  'enableDsu': False,
+  #},
+  #"2e07163a1ba9a780|2019-08-29--09-35-42": {
+  #  'carFingerprint': TOYOTA.LEXUS_IS,
+  #  'enableCamera': False,
+  #  'enableDsu': False,
+  #},
+  #"1dd19ceed0ee2b48|2018-12-22--17-36-49": {
+  #  'carFingerprint': TOYOTA.LEXUS_IS, # 300 hybrid
+  #  'enableCamera': True,
+  #  'enableDsu': False,
+  #},
   "76b83eb0245de90e|2019-10-20--15-42-29": {
     'carFingerprint': VOLKSWAGEN.GOLF,
     'enableCamera': True,

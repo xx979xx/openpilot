@@ -1,4 +1,4 @@
-from cereal import car
+from cereal import car, arne182
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import create_event, EventTypes as ET
 from selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -118,9 +118,11 @@ class CarInterface(CarInterfaceBase):
   def update(self, c, can_strings):
     canMonoTimes = []
     events = []
+    eventsArne182 = []
     buttonEvents = []
     params = Params()
     ret = car.CarState.new_message()
+    ret_arne182 = arne182.CarStateArne182.new_message()
 
     # Process the most recent CAN message traffic, and check for validity
     # The camera CAN has no signals we use at this time, but we process it
@@ -218,7 +220,7 @@ class CarInterface(CarInterfaceBase):
     # Attempt OP engagement only on rising edge of stock ACC engagement.
     elif not self.cruiseStateEnabledPrev:
       events.append(create_event('pcmEnable', [ET.ENABLE]))
-
+    ret_arne182.events = eventsArne182
     ret.events = events
     ret.buttonEvents = buttonEvents
     ret.canMonoTimes = canMonoTimes
@@ -231,7 +233,7 @@ class CarInterface(CarInterfaceBase):
     self.buttonStatesPrev = self.CS.buttonStates.copy()
 
     # cast to reader so it can't be modified
-    return ret.as_reader()
+    return ret.as_reader(), ret_arne182.as_reader()
 
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,

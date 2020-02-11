@@ -45,6 +45,7 @@ selfdrive/sensord/_sensord
 selfdrive/camerad/camerad
 selfdrive/modeld/_modeld
 selfdrive/modeld/_dmonitoringmodeld
+selfdrive/data_collection/gps-data
 /src/
 
 one

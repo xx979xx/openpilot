@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-from cereal import car
+from cereal import car, arne182
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
+from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event, create_event_arne
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
 from selfdrive.car.toyota.values import Ecu, ECU_FINGERPRINT, CAR, NO_STOP_TIMER_CAR, TSS2_CAR, FINGERPRINTS
@@ -16,12 +16,12 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController):
     self.CP = CP
     self.VM = VehicleModel(CP)
-
+    self.waiting = False
     self.frame = 0
     self.gas_pressed_prev = False
     self.brake_pressed_prev = False
     self.cruise_enabled_prev = False
-
+    self.keep_openpilot_engaged = True
     # *** init the major players ***
     self.CS = CarState(CP)
 
@@ -34,13 +34,13 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def compute_gb(accel, speed):
-    return float(accel) / 3.0
+    return float(accel) / 4.0
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), has_relay=False, car_fw=[]):
 
     ret = car.CarParams.new_message()
-
+    
     ret.carName = "toyota"
     ret.carFingerprint = candidate
     ret.isPandaBlack = has_relay
@@ -94,7 +94,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.init('lqr')
 
       ret.lateralTuning.lqr.scale = 1500.0
-      ret.lateralTuning.lqr.ki = 0.05
+      ret.lateralTuning.lqr.ki = 0.06
 
       ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
       ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
@@ -183,7 +183,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.03]]
       ret.lateralTuning.pid.kf = 0.00006
 
-    elif candidate == CAR.RAV4_TSS2:
+    elif candidate in [CAR.RAV4_TSS2, CAR.RAV4H_TSS2]:
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.68986
@@ -233,7 +233,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007818594
 
-    elif candidate == CAR.LEXUS_IS:
+    elif candidate in [CAR.LEXUS_IS, CAR.LEXUS_ISH, CAR.LEXUS_RX]:
       stop_and_go = False
       ret.safetyParam = 77
       ret.wheelbase = 2.79908
@@ -272,8 +272,8 @@ class CarInterface(CarInterfaceBase):
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [16. * CV.KPH_TO_MS, 45. * CV.KPH_TO_MS]  # breakpoints at 1 and 40 kph
     ret.steerMaxV = [1., 1.]  # 2/3rd torque allowed above 45 kph
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [1.]
+    ret.brakeMaxBP = [0., 35., 55.]
+    ret.brakeMaxV = [1.0, 0.8, 0.7]
 
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
     # In TSS2 cars the camera does long control
@@ -301,15 +301,15 @@ class CarInterface(CarInterfaceBase):
     ret.startAccel = 0.0
 
     if ret.enableGasInterceptor:
-      ret.gasMaxBP = [0., 9., 35]
+      ret.gasMaxBP = [0., 9., 55]
       ret.gasMaxV = [0.2, 0.5, 0.7]
-      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
-      ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.longitudinalTuning.kpV = [1.0, 0.75, 0.3]  # braking tune
+      ret.longitudinalTuning.kiV = [0.15, 0.1]
     else:
-      ret.gasMaxBP = [0.]
-      ret.gasMaxV = [0.5]
-      ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
-      ret.longitudinalTuning.kiV = [0.54, 0.36]
+      ret.gasMaxBP = [0., 9., 55]
+      ret.gasMaxV = [0.2, 0.5, 0.7]
+      ret.longitudinalTuning.kpV = [2.5, 1.5, 0.325]  # braking tune from rav4h
+      ret.longitudinalTuning.kiV = [0.3, 0.10]
 
     return ret
 
@@ -323,6 +323,7 @@ class CarInterface(CarInterfaceBase):
 
     # create message
     ret = car.CarState.new_message()
+    ret_arne182 = arne182.CarStateArne182.new_message()
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
 
@@ -361,9 +362,21 @@ class CarInterface(CarInterfaceBase):
     ret.steeringTorqueEps = self.CS.steer_torque_motor
     ret.steeringPressed = self.CS.steer_override
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
-
+    eventsArne182 = []
+    
     # cruise state
-    ret.cruiseState.enabled = self.CS.pcm_acc_active
+    if not self.cruise_enabled_prev:
+      self.waiting = False
+      ret.cruiseState.enabled = self.CS.pcm_acc_active
+    else:
+      if self.keep_openpilot_engaged:
+        ret.cruiseState.enabled = bool(self.CS.main_on)
+      if not self.CS.pcm_acc_active:
+        eventsArne182.append(create_event_arne('longControlDisabled', [ET.WARNING]))
+        ret.brakePressed = True
+        self.waiting = False
+    if self.CS.v_ego < 1 or not self.keep_openpilot_engaged:
+      ret.cruiseState.enabled = self.CS.pcm_acc_active
     ret.cruiseState.speed = self.CS.v_cruise_pcm * CV.KPH_TO_MS
     ret.cruiseState.available = bool(self.CS.main_on)
     ret.cruiseState.speedOffset = 0.
@@ -398,24 +411,36 @@ class CarInterface(CarInterfaceBase):
 
     ret.genericToggle = self.CS.generic_toggle
     ret.stockAeb = self.CS.stock_aeb
-
+    
+    if ret.cruiseState.enabled and not self.cruise_enabled_prev:  # this lets us modularize which checks we want to turn off op if cc was engaged previoiusly or not
+      disengage_event = True
+    else:
+      disengage_event = False
+      
     # events
     events = []
+    
 
     if self.cp_cam.can_invalid_cnt >= 200 and self.CP.enableCamera:
       events.append(create_event('invalidGiraffeToyota', [ET.PERMANENT]))
     if not ret.gearShifter == GearShifter.drive and self.CP.openpilotLongitudinalControl:
-      events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.doorOpen:
+      if ret.vEgo < 5:
+        eventsArne182.append(create_event_arne('wrongGearArne', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+      else:
+        events.append(create_event('wrongGear', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
+    if ret.doorOpen and disengage_event:
       events.append(create_event('doorOpen', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
-    if ret.seatbeltUnlatched:
+    if ret.seatbeltUnlatched and disengage_event:
       events.append(create_event('seatbeltNotLatched', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if self.CS.esp_disabled and self.CP.openpilotLongitudinalControl:
       events.append(create_event('espDisabled', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if not self.CS.main_on and self.CP.openpilotLongitudinalControl:
       events.append(create_event('wrongCarMode', [ET.NO_ENTRY, ET.USER_DISABLE]))
     if ret.gearShifter == GearShifter.reverse and self.CP.openpilotLongitudinalControl:
-      events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      if ret.vEgo < 5:
+        eventsArne182.append(create_event_arne('reverseGearArne', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
+      else:
+        events.append(create_event('reverseGear', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE]))
     if self.CS.steer_error:
       events.append(create_event('steerTempUnavailable', [ET.NO_ENTRY, ET.WARNING]))
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
@@ -434,22 +459,34 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('pcmEnable', [ET.ENABLE]))
     elif not ret.cruiseState.enabled:
       events.append(create_event('pcmDisable', [ET.USER_DISABLE]))
-
+      try:
+        if eventsArne182[0].name == 'longControlDisabled':
+          del eventsArne182[0]
+      except IndexError:
+        pass
+    if not self.waiting and ret.vEgo < 0.3 and not ret.gasPressed and self.CP.carFingerprint == CAR.RAV4H:
+      self.waiting = True
+    if self.waiting:
+      if ret.gasPressed:
+        self.waiting = False
+      else:
+        eventsArne182.append(create_event_arne('waitingMode', [ET.WARNING]))
     # disable on pedals rising edge or when brake is pressed and speed isn't zero
-    if (ret.gasPressed and not self.gas_pressed_prev) or \
-       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001)):
+    if (((ret.gasPressed and not self.gas_pressed_prev) or \
+       (ret.brakePressed and (not self.brake_pressed_prev or ret.vEgo > 0.001))) and disengage_event) or (ret.brakePressed and not self.brake_pressed_prev and ret.vEgo < 0.1):
       events.append(create_event('pedalPressed', [ET.NO_ENTRY, ET.USER_DISABLE]))
 
-    if ret.gasPressed:
+    if ret.gasPressed and disengage_event:
       events.append(create_event('pedalPressed', [ET.PRE_ENABLE]))
 
     ret.events = events
-
+    ret_arne182.events = eventsArne182
+    
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
 
-    return ret.as_reader()
+    return ret.as_reader(), ret_arne182.as_reader()
 
   # pass in a car.CarControl
   # to be called @ 100hz

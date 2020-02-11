@@ -1,7 +1,7 @@
 Import('env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc', 'cereal')
 
-src = ['ui.cc', 'paint.cc', '#phonelibs/nanovg/nanovg.c']
-libs = [common, 'zmq', 'czmq', 'capnp', 'capnp_c', 'm', cereal, 'json', messaging, gpucommon, visionipc]
+src = ['ui.cc', 'paint.cc', '#phonelibs/nanovg/nanovg.c', '#cereal/gen/c/log.capnp.c', '#cereal/gen/c/car.capnp.c']
+libs = [common, 'zmq', 'czmq', 'capnp', 'capnp_c', 'm', cereal, 'json', messaging, 'OpenCL', gpucommon, visionipc]
 
 if arch == "aarch64":
   src += ['sound.cc', 'slplay.c']
@@ -9,9 +9,8 @@ if arch == "aarch64":
   linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
 else:
   src += ['linux.cc']
-  libs += ['pthread', 'glfw']
-  linkflags = []
-  
+  libs += ['EGL', 'pthread', 'X11-xcb', 'xcb', 'X11', 'glfw']
+
 env.Program('_ui', src,
   LINKFLAGS=linkflags,
   LIBS=libs)

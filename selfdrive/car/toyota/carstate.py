@@ -1,10 +1,15 @@
+import numpy as np
+from common.numpy_fast import interp
+import math
 from cereal import car
 from common.numpy_fast import mean
+import cereal.messaging_arne as messaging_arne
 from common.kalman.simple_kalman import KF1D
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, TSS2_CAR, NO_DSU_CAR
+from common.travis_checker import travis
 
 GearShifter = car.CarState.GearShifter
 
@@ -19,6 +24,8 @@ def get_can_parser(CP):
     # sig_name, sig_address, default
     ("STEER_ANGLE", "STEER_ANGLE_SENSOR", 0),
     ("GEAR", "GEAR_PACKET", 0),
+    ("SPORT_ON", "GEAR_PACKET", 0),
+    ("ECON_ON", "GEAR_PACKET", 0),
     ("BRAKE_PRESSED", "BRAKE_MODULE", 0),
     ("GAS_PEDAL", "GAS_PEDAL", 0),
     ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
@@ -42,6 +49,14 @@ def get_can_parser(CP):
     ("IPAS_STATE", "EPS_STATUS", 1),
     ("BRAKE_LIGHTS_ACC", "ESP_CONTROL", 0),
     ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
+    ("BLINDSPOT","DEBUG", 0),
+    ("BLINDSPOTSIDE","DEBUG",65),
+    ("BLINDSPOTD1","DEBUG", 0),
+    ("BLINDSPOTD2","DEBUG", 0),
+    ("ACC_DISTANCE", "JOEL_ID", 2),
+    ("LANE_WARNING", "JOEL_ID", 1),
+    ("ACC_SLOW", "JOEL_ID", 0),
+    ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
   ]
 
   checks = [
@@ -81,7 +96,22 @@ def get_can_parser(CP):
 
 def get_cam_can_parser(CP):
 
-  signals = [("FORCE", "PRE_COLLISION", 0), ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0)]
+  signals = [
+    ("FORCE", "PRE_COLLISION", 0), 
+    ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0),
+    ("TSGN1", "RSA1", 0),
+    ("SPDVAL1", "RSA1", 0),
+    ("SPLSGN1", "RSA1", 0),
+    ("TSGN2", "RSA1", 0),
+    ("SPDVAL2", "RSA1", 0),
+    ("SPLSGN2", "RSA1", 0),
+    ("TSGN3", "RSA2", 0),
+    ("SPLSGN3", "RSA2", 0),
+    ("TSGN4", "RSA2", 0),
+    ("SPLSGN4", "RSA2", 0),
+    ("BARRIERS", "LKAS_HUD", 0),
+    ("RIGHT_LINE", "LKAS_HUD", 0),
+    ("LEFT_LINE", "LKAS_HUD", 0),]
 
   # use steering message to check if panda is connected to frc
   checks = [("STEERING_LKA", 42)]
@@ -98,8 +128,19 @@ class CarState():
     self.left_blinker_on = 0
     self.right_blinker_on = 0
     self.angle_offset = 0.
+    self.pcm_acc_status = False
     self.init_angle_offset = False
-
+    self.v_cruise_pcmlast = 41.0
+    self.setspeedoffset = 34.0
+    self.setspeedcounter = 0
+    self.Angles = np.zeros(250)
+    #self.Angles_later = np.zeros(250)
+    self.Angle_counter = 0
+    self.Angle = [0, 5, 10, 15,20,25,30,35,60,100,180,270,500]
+    self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
+    if not travis:
+      self.arne_pm = messaging_arne.PubMaster(['liveTrafficData', 'arne182Status'])
+      
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
 
@@ -161,7 +202,39 @@ class CarState():
       self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
-    self.gear_shifter = parse_gear_shifter(self.shifter_values.get(can_gear, None))
+    self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
+    try:
+      self.econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
+    except:
+      self.econ_on = 0
+    try:
+      self.sport_on = cp.vl["GEAR_PACKET"]['SPORT_ON']
+    except:
+      self.sport_on = 0
+    if self.sport_on == 1:
+      self.gasbuttonstatus = 1
+    if self.econ_on == 1:
+      self.gasbuttonstatus = 2
+    if self.sport_on == 0 and self.econ_on == 0:
+      self.gasbuttonstatus = 0
+    msg = messaging_arne.new_message()
+    msg.init('arne182Status')
+    if cp.vl["DEBUG"]['BLINDSPOTSIDE']==65: #Left
+      if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
+        msg.arne182Status.leftBlindspot = bool(1)
+        print("Left Blindspot Detected")
+      else:
+        msg.arne182Status.leftBlindspot = bool(0)
+    elif  cp.vl["DEBUG"]['BLINDSPOTSIDE']==66: #Right
+      if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
+        msg.arne182Status.rightBlindspot = bool(1)
+        print("Right Blindspot Detected")
+      else:
+        msg.arne182Status.rightBlindspot = bool(0)
+    
+    msg.arne182Status.gasbuttonstatus = self.gasbuttonstatus
+    if not travis:
+      self.arne_pm.send('arne182Status', msg)
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       self.main_on = cp.vl["DSU_CRUISE"]['MAIN_ON']
     else:
@@ -178,7 +251,7 @@ class CarState():
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
-
+    
     self.user_brake = 0
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       self.v_cruise_pcm = cp.vl["DSU_CRUISE"]['SET_SPEED']
@@ -186,6 +259,53 @@ class CarState():
     else:
       self.v_cruise_pcm = cp.vl["PCM_CRUISE_2"]['SET_SPEED']
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]['LOW_SPEED_LOCKOUT'] == 2
+    if self.CP.carFingerprint in TSS2_CAR:
+      minimum_set_speed = 27.0
+    elif self.CP.carFingerprint == CAR.RAV4:
+      minimum_set_speed = 44.0
+    else:
+      minimum_set_speed = 41.0
+    if cp.vl["PCM_CRUISE"]['CRUISE_STATE'] and not self.pcm_acc_status:
+      if self.v_ego < 12.5:
+        self.setspeedoffset = max(min(int(minimum_set_speed-self.v_ego*3.6),(minimum_set_speed-7.0)),0.0)
+        self.v_cruise_pcmlast = self.v_cruise_pcm
+      else:
+        self.setspeedoffset = 0
+        self.v_cruise_pcmlast = self.v_cruise_pcm
+    if self.v_cruise_pcm < self.v_cruise_pcmlast:
+      if self.setspeedcounter > 0 and self.v_cruise_pcm > minimum_set_speed:
+        self.setspeedoffset = self.setspeedoffset + 4
+      else:
+        if math.floor((int((-self.v_cruise_pcm)*(minimum_set_speed-7.0)/(169.0-minimum_set_speed)  + 169.0*(minimum_set_speed-7.0)/(169.0-minimum_set_speed))-self.setspeedoffset)/(self.v_cruise_pcm-(minimum_set_speed-1.0))) > 0:
+          self.setspeedoffset = self.setspeedoffset + math.floor((int((-self.v_cruise_pcm)*(minimum_set_speed-7.0)/(169.0-minimum_set_speed)  + 169*(minimum_set_speed-7.0)/(169.0-minimum_set_speed))-self.setspeedoffset)/(self.v_cruise_pcm-(minimum_set_speed-1.0)))
+      self.setspeedcounter = 50
+    if self.v_cruise_pcmlast < self.v_cruise_pcm:
+      if self.setspeedcounter > 0 and (self.setspeedoffset - 4) > 0:
+        self.setspeedoffset = self.setspeedoffset - 4
+      else:
+        self.setspeedoffset = self.setspeedoffset + math.floor((int((-self.v_cruise_pcm)*(minimum_set_speed-7.0)/(169.0-minimum_set_speed)  + 169*(minimum_set_speed-7.0)/(169.0-minimum_set_speed))-self.setspeedoffset)/(170-self.v_cruise_pcm))
+      self.setspeedcounter = 50
+    if self.setspeedcounter > 0:
+      self.setspeedcounter = self.setspeedcounter - 1
+    self.v_cruise_pcmlast = self.v_cruise_pcm
+    if int(self.v_cruise_pcm) - self.setspeedoffset < 7:
+      self.setspeedoffset = int(self.v_cruise_pcm) - 7
+    if int(self.v_cruise_pcm) - self.setspeedoffset > 169:
+      self.setspeedoffset = int(self.v_cruise_pcm) - 169
+
+
+    self.v_cruise_pcm = min(max(7, int(self.v_cruise_pcm) - self.setspeedoffset),169)
+    
+    if not self.left_blinker_on and not self.right_blinker_on:
+      self.Angles[self.Angle_counter] = abs(self.angle_steers)
+      #self.Angles_later[self.Angle_counter] = abs(angle_later)
+      self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
+      #self.v_cruise_pcm = int(min(self.v_cruise_pcm, self.brakefactor * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
+    else:
+      self.Angles[self.Angle_counter] = 0
+      #self.Angles_later[self.Angle_counter] = 0
+    self.Angle_counter = (self.Angle_counter + 1 ) % 250
+
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]['CRUISE_STATE']
     self.pcm_acc_active = bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE'])
     self.brake_lights = bool(cp.vl["ESP_CONTROL"]['BRAKE_LIGHTS_ACC'] or self.brake_pressed)
@@ -195,3 +315,41 @@ class CarState():
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
 
     self.stock_aeb = bool(cp_cam.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cam.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
+    
+    self.barriers = cp_cam.vl["LKAS_HUD"]['BARRIERS']
+    self.rightline = cp_cam.vl["LKAS_HUD"]['RIGHT_LINE']
+    self.leftline = cp_cam.vl["LKAS_HUD"]['LEFT_LINE']
+    
+    self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
+    self.spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
+    
+    self.splsgn1 = cp_cam.vl["RSA1"]['SPLSGN1']
+    self.tsgn2 = cp_cam.vl["RSA1"]['TSGN2']
+    self.spdval2 = cp_cam.vl["RSA1"]['SPDVAL2']
+    
+    self.splsgn2 = cp_cam.vl["RSA1"]['SPLSGN2']
+    self.tsgn3 = cp_cam.vl["RSA2"]['TSGN3']
+    self.splsgn3 = cp_cam.vl["RSA2"]['SPLSGN3']
+    self.tsgn4 = cp_cam.vl["RSA2"]['TSGN4']
+    self.splsgn4 = cp_cam.vl["RSA2"]['SPLSGN4']
+    self.noovertake = self.tsgn1 == 65 or self.tsgn2 == 65 or self.tsgn3 == 65 or self.tsgn4 == 65 or self.tsgn1 == 66 or self.tsgn2 == 66 or self.tsgn3 == 66 or self.tsgn4 == 66
+    if self.spdval1 > 0 or self.spdval2 > 0:
+      dat = messaging_arne.new_message()
+      dat.init('liveTrafficData')
+      if self.spdval1 > 0:
+        dat.liveTrafficData.speedLimitValid = True
+        if self.tsgn1 == 36:
+          dat.liveTrafficData.speedLimit = self.spdval1 * 1.60934
+        elif self.tsgn1 == 1:
+          dat.liveTrafficData.speedLimit = self.spdval1
+        else:
+          dat.liveTrafficData.speedLimit = 0
+      else:
+        dat.liveTrafficData.speedLimitValid = False
+      if self.spdval2 > 0:
+        dat.liveTrafficData.speedAdvisoryValid = True
+        dat.liveTrafficData.speedAdvisory = self.spdval2
+      else:
+        dat.liveTrafficData.speedAdvisoryValid = False
+      if not travis:
+        self.arne_pm.send('liveTrafficData', dat)

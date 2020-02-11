@@ -17,9 +17,9 @@ from selfdrive.version import terms_version, training_version
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.loggerd.config import get_available_percent
-from selfdrive.pandad import get_expected_signature
+from selfdrive.pandad import get_expected_version
 
-FW_SIGNATURE = get_expected_signature()
+FW_SIGNATURE = get_expected_version()
 
 ThermalStatus = log.ThermalData.ThermalStatus
 NetworkType = log.ThermalData.NetworkType
@@ -297,8 +297,8 @@ def thermald_thread():
     accepted_terms = params.get("HasAcceptedTerms") == terms_version
     completed_training = params.get("CompletedTrainingVersion") == training_version
 
-    panda_signature = params.get("PandaFirmware")
-    fw_version_match = (panda_signature is None) or (panda_signature == FW_SIGNATURE)   # don't show alert is no panda is connected (None)
+    panda_signature = params.get("PandaFirmware", encoding="utf8")
+    fw_version_match = (panda_signature is None) or (panda_signature.startswith(FW_SIGNATURE) )   # don't show alert is no panda is connected (None)
 
     should_start = ignition
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from cereal import car
+from cereal import car, arne182
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event
@@ -110,6 +110,7 @@ class CarInterface(CarInterfaceBase):
 
     # create message
     ret = car.CarState.new_message()
+    ret_arne182 = arne182.CarStateArne182.new_message()
 
     ret.canValid = self.cp.can_valid
 
@@ -140,6 +141,7 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = []
+    eventsArne182 = []
 
     if self.CS.steer_error:
       events.append(create_event('steerUnavailable', [ET.NO_ENTRY, ET.IMMEDIATE_DISABLE, ET.PERMANENT]))
@@ -162,12 +164,13 @@ class CarInterface(CarInterfaceBase):
       events.append(create_event('steerTempUnavailableMute', [ET.WARNING]))
 
     ret.events = events
+    ret_arne182.events = eventsArne182
 
     self.gas_pressed_prev = ret.gasPressed
     self.brake_pressed_prev = ret.brakePressed
     self.cruise_enabled_prev = ret.cruiseState.enabled
 
-    return ret.as_reader()
+    return ret.as_reader(), ret_arne182.as_reader()
 
   # pass in a car.CarControl
   # to be called @ 100hz

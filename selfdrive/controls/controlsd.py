@@ -8,10 +8,11 @@ from common.realtime import sec_since_boot, set_realtime_priority, Ratekeeper, D
 from common.profiler import Profiler
 from common.params import Params
 import cereal.messaging as messaging
+import cereal.messaging_arne as messaging_arne
 from selfdrive.config import Conversions as CV
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_alert
-from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
+#from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import get_events, \
                                                  create_event, \
                                                  EventTypes as ET, \
@@ -25,6 +26,8 @@ from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.planner import LON_MPC_STEP
 from selfdrive.locationd.calibration_helpers import Calibration, Filter
+#from common.travis_checker import travis
+from common.op_params import opParams
 
 LANE_DEPARTURE_THRESHOLD = 0.1
 
@@ -64,18 +67,21 @@ def events_to_bytes(events):
     ret.append(e.to_bytes())
   return ret
 
+def data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, can_error_counter, params, arne_sm):
 
-def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter, params):
   """Receive data from sockets and create events for battery, temperature and disk space"""
 
   # Update carstate from CAN and create events
   can_strs = messaging.drain_sock_raw(can_sock, wait_for_one=True)
-  CS = CI.update(CC, can_strs)
+  CS, CS_arne182 = CI.update(CC, can_strs)
 
   sm.update(0)
-
+  arne_sm.update(0)
+  
   events = list(CS.events)
-  events += list(sm['dMonitoringState'].events)
+  
+  events_arne182 = list(CS_arne182.events)
+  
   add_lane_change_event(events, sm['pathPlan'])
   enabled = isEnabled(state)
 
@@ -125,10 +131,21 @@ def data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter
   if mismatch_counter >= 200:
     events.append(create_event('controlsMismatch', [ET.IMMEDIATE_DISABLE]))
 
-  return CS, events, cal_perc, mismatch_counter, can_error_counter
+
+  # Driver monitoring
+  if sm.updated['model']:
+    driver_status.set_policy(sm['model'])
+
+  if sm.updated['driverMonitoring']:
+    driver_status.get_pose(sm['driverMonitoring'], cal_rpy, CS.vEgo, enabled)
+
+  if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
+    events.append(create_event("tooDistracted", [ET.NO_ENTRY]))
+
+  return CS, events, cal_perc, mismatch_counter, can_error_counter, events_arne182
 
 
-def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM):
+def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM, events_arne182):
   """Compute conditional state transitions and execute actions on state transitions"""
   enabled = isEnabled(state)
 
@@ -212,11 +229,82 @@ def state_transition(frame, CS, CP, state, events, soft_disable_timer, v_cruise_
     elif not get_events(events, [ET.PRE_ENABLE]):
       state = State.enabled
 
+  # DISABLED
+  if state == State.disabled:
+    if get_events(events_arne182, [ET.ENABLE]):
+      if get_events(events_arne182, [ET.NO_ENTRY]):
+        for e in get_events(events_arne182, [ET.NO_ENTRY]):
+          AM.add(frame, str(e) + "NoEntry", enabled)
+
+      else:
+        if get_events(events_arne182, [ET.PRE_ENABLE]):
+          state = State.preEnabled
+        else:
+          state = State.enabled
+        AM.add(frame, "enable", enabled)
+        v_cruise_kph = initialize_v_cruise(CS.vEgo, CS.buttonevents_arne182, v_cruise_kph_last)
+
+  # ENABLED
+  elif state == State.enabled:
+    if get_events(events_arne182, [ET.USER_DISABLE]):
+      state = State.disabled
+      AM.add(frame, "disable", enabled)
+
+    elif get_events(events_arne182, [ET.IMMEDIATE_DISABLE]):
+      state = State.disabled
+      for e in get_events(events_arne182, [ET.IMMEDIATE_DISABLE]):
+        AM.add(frame, e, enabled)
+
+    elif get_events(events_arne182, [ET.SOFT_DISABLE]):
+      state = State.softDisabling
+      soft_disable_timer = 300   # 3s
+      for e in get_events(events_arne182, [ET.SOFT_DISABLE]):
+        AM.add(frame, e, enabled)
+
+  # SOFT DISABLING
+  elif state == State.softDisabling:
+    if get_events(events_arne182, [ET.USER_DISABLE]):
+      state = State.disabled
+      AM.add(frame, "disable", enabled)
+
+    elif get_events(events_arne182, [ET.IMMEDIATE_DISABLE]):
+      state = State.disabled
+      for e in get_events(events_arne182, [ET.IMMEDIATE_DISABLE]):
+        AM.add(frame, e, enabled)
+
+    elif not get_events(events_arne182, [ET.SOFT_DISABLE]):
+      # no more soft disabling condition, so go back to ENABLED
+      state = State.enabled
+
+    elif get_events(events_arne182, [ET.SOFT_DISABLE]) and soft_disable_timer > 0:
+      for e in get_events(events_arne182, [ET.SOFT_DISABLE]):
+        AM.add(frame, e, enabled)
+
+    elif soft_disable_timer <= 0:
+      state = State.disabled
+
+  # PRE ENABLING
+  elif state == State.preEnabled:
+    if get_events(events_arne182, [ET.USER_DISABLE]):
+      state = State.disabled
+      AM.add(frame, "disable", enabled)
+
+    elif get_events(events_arne182, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
+      state = State.disabled
+      for e in get_events(events_arne182, [ET.IMMEDIATE_DISABLE, ET.SOFT_DISABLE]):
+        AM.add(frame, e, enabled)
+
+    elif not get_events(events_arne182, [ET.PRE_ENABLE]):
+      state = State.enabled
+
+
   return state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last
 
 
 def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cruise_kph, v_cruise_kph_last,
-                  AM, rk, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame):
+
+                  AM, rk, driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, arne_sm, events_arne182, radarstate):
+
   """Given the state, this function returns an actuators packet"""
 
   actuators = car.CarControl.Actuators.new_message()
@@ -239,7 +327,7 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
 
   if state in [State.preEnabled, State.disabled]:
     LaC.reset()
-    LoC.reset(v_pid=CS.vEgo)
+    LoC.reset(v_pid=plan.vTargetFuture)
 
   elif state in [State.enabled, State.softDisabling]:
     # parse warnings from car specific interface
@@ -252,6 +340,17 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
           extra_text = str(int(round(CP.minSteerSpeed * CV.MS_TO_MPH))) + " mph"
       AM.add(frame, e, enabled, extra_text_2=extra_text)
 
+    # parse warnings from car specific interface
+    for e in get_events(events_arne182, [ET.WARNING]):
+      extra_text = ""
+      if e == "belowSteerSpeed":
+        if is_metric:
+          extra_text = str(int(round(CP.minSteerSpeed * CV.MS_TO_KPH))) + " kph"
+        else:
+          extra_text = str(int(round(CP.minSteerSpeed * CV.MS_TO_MPH))) + " mph"
+      AM.add(frame, e, enabled, extra_text_2=extra_text)
+
+
   plan_age = DT_CTRL * (frame - rcv_frame['plan'])
   dt = min(plan_age, LON_MPC_STEP + DT_CTRL) + DT_CTRL  # no greater than dt mpc + dt, to prevent too high extraps
 
@@ -259,8 +358,13 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
   v_acc_sol = plan.vStart + dt * (a_acc_sol + plan.aStart) / 2.0
 
   # Gas/Brake PID loop
-  actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
-                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP)
+  #if arne_sm.updated['arne182Status']:
+  #  gas_button_status = arne_sm['arne182Status'].gasbuttonstatus
+  #else:
+  #  gas_button_status = 0
+
+  actuators.gas, actuators.brake = LoC.update(active, CS.vEgo, CS.gasPressed, CS.brakePressed, CS.standstill, CS.cruiseState.standstill,
+                                              v_cruise_kph, v_acc_sol, plan.vTargetFuture, a_acc_sol, CP, plan.hasLead, radarstate.leadOne.dRel)
   # Steering PID loop and lateral MPC
   actuators.steer, actuators.steerAngle, lac_log = LaC.update(active, CS.vEgo, CS.steeringAngle, CS.steeringRate, CS.steeringTorqueEps, CS.steeringPressed, CS.steeringRateLimited, CP, path_plan)
 
@@ -284,12 +388,25 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
         extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
     AM.add(frame, str(e) + "Permanent", enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
 
-  return actuators, v_cruise_kph, v_acc_sol, a_acc_sol, lac_log, last_blinker_frame
+
+  # Parse permanent warnings to display constantly
+  for e in get_events(events_arne182, [ET.PERMANENT]):
+    extra_text_1, extra_text_2 = "", ""
+    if e == "calibrationIncomplete":
+      extra_text_1 = str(cal_perc) + "%"
+      if is_metric:
+        extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_KPH))) + " kph"
+      else:
+        extra_text_2 = str(int(round(Filter.MIN_SPEED * CV.MS_TO_MPH))) + " mph"
+    AM.add(frame, str(e) + "Permanent", enabled, extra_text_1=extra_text_1, extra_text_2=extra_text_2)
+    
+  return actuators, v_cruise_kph, driver_status, v_acc_sol, a_acc_sol, lac_log, last_blinker_frame
 
 
 def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, AM,
-              LaC, LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev,
-              last_blinker_frame, is_ldw_enabled, can_error_counter):
+              driver_status, LaC, LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev,
+              last_blinker_frame, is_ldw_enabled, can_error_counter, op_params):
+
   """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
   CC = car.CarControl.new_message()
@@ -322,6 +439,8 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
   if len(md.meta.desirePrediction):
     l_lane_change_prob = md.meta.desirePrediction[log.PathPlan.Desire.laneChangeLeft - 1]
     r_lane_change_prob = md.meta.desirePrediction[log.PathPlan.Desire.laneChangeRight - 1]
+
+    CAMERA_OFFSET = op_params.get('camera_offset', 0.06)
 
     l_lane_close = left_lane_visible and (sm['pathPlan'].lPoly[3] < (1.08 - CAMERA_OFFSET))
     r_lane_close = right_lane_visible and (sm['pathPlan'].rPoly[3] > -(1.08 + CAMERA_OFFSET))
@@ -366,6 +485,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
     "vEgoRaw": CS.vEgoRaw,
     "angleSteers": CS.steeringAngle,
     "curvature": VM.calc_curvature((CS.steeringAngle - sm['pathPlan'].angleOffset) * CV.DEG_TO_RAD, CS.vEgo),
+    "decelForTurn": sm['plan'].decelForTurn,
     "steerOverride": CS.steeringPressed,
     "state": state,
     "engageable": not bool(get_events(events, [ET.NO_ENTRY])),
@@ -430,7 +550,7 @@ def data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk
   return CC, events_bytes
 
 
-def controlsd_thread(sm=None, pm=None, can_sock=None):
+def controlsd_thread(sm=None, pm=None, can_sock=None, arne_sm=None):
   gc.disable()
 
   # start the loop
@@ -451,10 +571,12 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     pm = messaging.PubMaster(['sendcan', 'controlsState', 'carState', 'carControl', 'carEvents', 'carParams'])
 
   if sm is None:
-    sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'dMonitoringState', 'plan', 'pathPlan', \
-                              'model'])
+    sm = messaging.SubMaster(['thermal', 'health', 'liveCalibration', 'driverMonitoring', 'plan', 'pathPlan', \
+                              'model', 'gpsLocation', 'radarState'], ignore_alive=['gpsLocation'])
 
-
+  if arne_sm is None:
+    arne_sm = messaging_arne.SubMaster(['arne182Status'])
+    
   if can_sock is None:
     can_timeout = None if os.environ.get('NO_CAN_TIMEOUT', False) else 100
     can_sock = messaging.sub_sock('can', timeout=can_timeout)
@@ -523,13 +645,15 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
   internet_needed = params.get("Offroad_ConnectivityNeeded", encoding='utf8') is not None
 
   prof = Profiler(False)  # off by default
+  op_params = opParams()
 
   while True:
     start_time = sec_since_boot()
     prof.checkpoint("Ratekeeper", ignore=True)
 
     # Sample data and compute car events
-    CS, events, cal_perc, mismatch_counter, can_error_counter = data_sample(CI, CC, sm, can_sock, state, mismatch_counter, can_error_counter, params)
+
+    CS, events, cal_perc, mismatch_counter, can_error_counter, events_arne182 = data_sample(CI, CC, sm, can_sock, driver_status, state, mismatch_counter, can_error_counter, params, arne_sm)
     prof.checkpoint("Sample")
 
     # Create alerts
@@ -567,20 +691,20 @@ def controlsd_thread(sm=None, pm=None, can_sock=None):
     if not read_only:
       # update control state
       state, soft_disable_timer, v_cruise_kph, v_cruise_kph_last = \
-        state_transition(sm.frame, CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM)
+        state_transition(sm.frame, CS, CP, state, events, soft_disable_timer, v_cruise_kph, AM, events_arne182)
       prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
     actuators, v_cruise_kph, v_acc, a_acc, lac_log, last_blinker_frame = \
       state_control(sm.frame, sm.rcv_frame, sm['plan'], sm['pathPlan'], CS, CP, state, events, v_cruise_kph, v_cruise_kph_last, AM, rk,
-                    LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame)
+                    driver_status, LaC, LoC, read_only, is_metric, cal_perc, last_blinker_frame, arne_sm, events_arne182, sm['radarState'])
 
     prof.checkpoint("State Control")
 
     # Publish data
     CC, events_prev = data_send(sm, pm, CS, CI, CP, VM, state, events, actuators, v_cruise_kph, rk, AM, LaC,
                                 LoC, read_only, start_time, v_acc, a_acc, lac_log, events_prev, last_blinker_frame,
-                                is_ldw_enabled, can_error_counter)
+                                is_ldw_enabled, can_error_counter, op_params)
     prof.checkpoint("Sent")
 
     rk.monitor_time()

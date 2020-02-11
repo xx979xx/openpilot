@@ -42,7 +42,7 @@ class IsoTpParallelQuery():
           elif msg.address in self.msg_addrs.values():
             self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
 
-  def _can_tx(self, tx_addr, dat, bus):
+  def _can_tx(self, tx_addr, dat: bytes, bus):
     """Helper function to send single message"""
     msg = [tx_addr, 0, dat, bus]
     self.sendcan.send(can_list_to_can_capnp([msg], msgtype='sendcan'))

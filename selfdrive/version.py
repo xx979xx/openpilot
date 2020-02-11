@@ -51,6 +51,30 @@ branch = get_git_full_branchname()
 
 try:
   # This is needed otherwise touched files might show up as modified
+
+  origin = get_git_remote()
+  if origin.startswith('git@github.com:arne182') or origin.startswith('https://github.com/arne182'):
+    if origin.endswith('/one.git'):
+      dirty = True
+    else:
+      branch = get_git_full_branchname()
+
+      # This is needed otherwise touched files might show up as modified
+      try:
+        subprocess.check_call(["git", "update-index", "--refresh"])
+      except subprocess.CalledProcessError:
+        pass
+
+      dirty = subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0
+      if dirty:
+        dirty_files = subprocess.check_output(["git", "diff-index", branch, "--"], encoding='utf8')
+        commit = subprocess.check_output(["git", "rev-parse", "--verify", "HEAD"], encoding='utf8').rstrip()
+        origin_commit = subprocess.check_output(["git", "rev-parse", "--verify", branch], encoding='utf8').rstrip()
+        cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch, dirty_files=dirty_files, commit=commit, origin_commit=origin_commit)
+
+  else:
+    dirty = True
+except subprocess.CalledProcessError:
   try:
     subprocess.check_call(["git", "update-index", "--refresh"])
   except subprocess.CalledProcessError:
