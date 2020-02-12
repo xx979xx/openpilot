@@ -71,17 +71,17 @@ routes = {
     'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
     'enableCamera': True,
   },
-  #"8190c7275a24557b|2020-01-29--08-33-58": {
-  #  'carFingerprint': CHRYSLER.PACIFICA_2020_HYBRID,
-  #  'enableCamera': True,
-  #},
+  "8190c7275a24557b|2020-01-29--08-33-58": {
+    'carFingerprint': CHRYSLER.PACIFICA_2020_HYBRID,
+    'enableCamera': True,
+  },
   # This pacifica was removed because the fingerprint seemed from a Volt
   #"9f7a7e50a51fb9db|2019-01-03--14-05-01": {
   #  'carFingerprint': CHRYSLER.PACIFICA_2018,
   #  'enableCamera': True,
   #},
   #"9f7a7e50a51fb9db|2019-01-17--18-34-21": {
-  #  'carFingerprint': CHRYSLER.JEEP_CHEROKEE_2018,
+  #  'carFingerprint': CHRYSLER.JEEP_CHEROKEE,
   #  'enableCamera': True,
   #},
   "192a598e34926b1e|2019-04-04--13-27-39": {
@@ -325,6 +325,11 @@ routes = {
     'carFingerprint': TOYOTA.LEXUS_RX_TSS2,
     'enableCamera': True,
   },
+  "ec429c0f37564e3c|2020-02-01--17-28-12": {
+    'carFingerprint': TOYOTA.LEXUS_NXH,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   #FIXME: This works sometimes locally, but never in CI. Timing issue?
   #"b0f5a01cf604185c|2018-01-31--20-11-39": {
   #  'carFingerprint': TOYOTA.LEXUS_RXH,
@@ -368,6 +373,11 @@ routes = {
   #   'enableDsu': False,
   # },
   # TODO: missingsome combos for highlander
+  "0a302ffddbb3e3d3|2020-02-08--16-19-08": {
+    'carFingerprint': TOYOTA.HIGHLANDER_TSS2,
+    'enableCamera': True,
+    'enableDsu': False,
+  },
   "aa659debdd1a7b54|2018-08-31--11-12-01": {
     'carFingerprint': TOYOTA.HIGHLANDER,
     'enableCamera': False,
@@ -470,7 +480,7 @@ non_public_routes = [
 ]
 
 # TODO: add routes for these cars
-non_tested_cars = [TOYOTA.LEXUS_CTH,TOYOTA.LEXUS_IS,TOYOTA.LEXUS_ISH, CHRYSLER.PACIFICA_2018, HONDA.ACCORDH, CHRYSLER.PACIFICA_2017, CHRYSLER.JEEP_CHEROKEE_2017, CHRYSLER.JEEP_CHEROKEE_2018, CHRYSLER.JEEP_CHEROKEE_2019, CHRYSLER.PACIFICA_2020_HYBRID]
+non_tested_cars = [TOYOTA.LEXUS_CTH, TOYOTA.LEXUS_IS, TOYOTA.LEXUS_ISH, CHRYSLER.PACIFICA_2018, CHRYSLER.PACIFICA_2017, HONDA.ACCORDHCHRYSLER.JEEP_CHEROKEE_2017, CHRYSLER.JEEP_CHEROKEE_2018]
 
 if __name__ == "__main__":
 
