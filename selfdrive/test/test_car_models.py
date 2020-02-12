@@ -71,10 +71,10 @@ routes = {
     'carFingerprint': CHRYSLER.PACIFICA_2019_HYBRID,
     'enableCamera': True,
   },
-  "8190c7275a24557b|2020-01-29--08-33-58": {
-    'carFingerprint': CHRYSLER.PACIFICA_2020_HYBRID,
-    'enableCamera': True,
-  },
+  #"8190c7275a24557b|2020-01-29--08-33-58": {
+  #  'carFingerprint': CHRYSLER.PACIFICA_2020_HYBRID,
+  #  'enableCamera': True,
+  #},
   # This pacifica was removed because the fingerprint seemed from a Volt
   #"9f7a7e50a51fb9db|2019-01-03--14-05-01": {
   #  'carFingerprint': CHRYSLER.PACIFICA_2018,
@@ -480,7 +480,7 @@ non_public_routes = [
 ]
 
 # TODO: add routes for these cars
-non_tested_cars = [TOYOTA.LEXUS_CTH, TOYOTA.LEXUS_IS, TOYOTA.LEXUS_ISH, CHRYSLER.PACIFICA_2018, CHRYSLER.PACIFICA_2017, HONDA.ACCORDH, CHRYSLER.JEEP_CHEROKEE_2017, CHRYSLER.JEEP_CHEROKEE_2018]
+non_tested_cars = [TOYOTA.LEXUS_CTH, TOYOTA.LEXUS_IS, TOYOTA.LEXUS_ISH, CHRYSLER.PACIFICA_2018, CHRYSLER.PACIFICA_2017, HONDA.ACCORDH, CHRYSLER.JEEP_CHEROKEE_2017, CHRYSLER.JEEP_CHEROKEE_2018, CHRYSLER.PACIFICA_2020_HYBRID]
 
 if __name__ == "__main__":
 
