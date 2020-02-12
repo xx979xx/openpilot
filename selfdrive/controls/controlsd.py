@@ -659,7 +659,7 @@ def controlsd_thread(sm=None, pm=None, can_sock=None, arne_sm=None):
     if not sm['pathPlan'].paramsValid:
       events.append(create_event('vehicleModelInvalid', [ET.WARNING]))
     if not sm['pathPlan'].posenetValid:
-      events.append(create_event('posenetInvalid', [ET.NO_ENTRY, ET.WARNING]))
+      events.append(create_event('posenetInvalid', [ET.WARNING]))
     if not sm['plan'].radarValid:
       events.append(create_event('radarFault', [ET.NO_ENTRY, ET.SOFT_DISABLE]))
     if sm['plan'].radarCanError:
