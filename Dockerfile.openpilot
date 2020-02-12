@@ -66,7 +66,7 @@ RUN pip install matplotlib==3.1.1 dictdiffer==0.8.0 fastcluster==1.1.25 aenum==2
 COPY phonelibs/install_capnp.sh /tmp/install_capnp.sh
 RUN /tmp/install_capnp.sh
 
-RUN git clone --branch v0.7 https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
+RUN git clone --branch master https://github.com/commaai/openpilot-tools.git /tmp/openpilot/tools
 
 ENV PYTHONPATH /tmp/openpilot:${PYTHONPATH}
 COPY ./.pylintrc /tmp/openpilot/.pylintrc
