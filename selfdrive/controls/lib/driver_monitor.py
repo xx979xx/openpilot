@@ -14,12 +14,12 @@ else:
   awareness_factor = 1
 
 _AWARENESS_TIME = 70. * awareness_factor  # 1.6 minutes limit without user touching steering wheels make the car enter a terminal status
-_AWARENESS_PRE_TIME_TILL_TERMINAL = 15.  # a first alert is issued 25s before expiration
-_AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.  # a second alert is issued 15s before start decelerating the car
+_AWARENESS_PRE_TIME_TILL_TERMINAL = 15. * awareness_factor # a first alert is issued 25s before expiration
+_AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6. * awareness_factor  # a second alert is issued 15s before start decelerating the car
 
-_DISTRACTED_TIME = 11.
-_DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
-_DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
+_DISTRACTED_TIME = 11. * awareness_factor
+_DISTRACTED_PRE_TIME_TILL_TERMINAL = 8. * awareness_factor
+_DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6. * awareness_factor
 
 _FACE_THRESHOLD = 0.4
 _EYE_THRESHOLD = 0.6
