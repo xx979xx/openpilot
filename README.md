@@ -27,8 +27,12 @@ More info about how to install this fork can be found [here](https://medium.com/
 ## Branches
 
 `release4`: this is the default branch that is most up to date with the openpilot 0.7 release branch. Normally you should use this branch.
-`072-clean`: this is my default testing branch. When I finishing testing/adding new structure, I'll merge this into the `release4` branch.
+
+`072-clean`: this is my default testing branch. When I finishing testing/adding new structure, I'll merge this into the 
+`release4` branch.
+
 `release3`: this is my old branch, that is compatible with openpilot 0.6.
+
 `release2`: this is my old branch, that is compatible with openpilot 0.5.
 
 # Configuration
