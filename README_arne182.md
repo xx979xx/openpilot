@@ -27,7 +27,7 @@ More info about how to install this fork can be found [here](https://medium.com/
 ## Branches
 
 `release4`: this is the default branch that is most up to date with the openpilot 0.7 release branch. Normally you should use this branch.
-`071-clean`: this is my default testing branch. When I finishing testing/adding new structure, I'll merge this into the `release4` branch.
+`072-clean`: this is my default testing branch. When I finishing testing/adding new structure, I'll merge this into the `release4` branch.
 `release3`: this is my old branch, that is compatible with openpilot 0.6.
 `release2`: this is my old branch, that is compatible with openpilot 0.5.
 
@@ -67,7 +67,7 @@ More info about how to install this fork can be found [here](https://medium.com/
 - No fingerprint compatibility problems. A completely different way to combine and split Fingerprints so that they always work I.e. comma is not supporting rav4h 2019 because of this Fingerprint method. Mine is better
 - Custom events and capnp structure so that comma is happy with the drives from my fork
 - Forward collision warning actually brakes for you.
-
+- Blind Spot Monitoring for all of the toyota which will be added to control ALCA. For right now it is always on. It will flash rapidly when stopped and if the object is detected. 
 
 # Licensing
 
