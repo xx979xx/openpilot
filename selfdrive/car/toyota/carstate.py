@@ -13,14 +13,9 @@ from common.travis_checker import travis
 
 GearShifter = car.CarState.GearShifter
 
-def parse_gear_shifter(gear, vals):
-
-  val_to_capnp = {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
-                  'D': GearShifter.drive, 'B': GearShifter.brake}
-  try:
-    return val_to_capnp[vals[gear]]
-  except KeyError:
-    return GearShifter.unknown
+def parse_gear_shifter(gear):
+  return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
+              'D': GearShifter.drive, 'B': GearShifter.brake}.get(gear, GearShifter.unknown)
 
 
 def get_can_parser(CP):
@@ -102,7 +97,7 @@ def get_can_parser(CP):
 def get_cam_can_parser(CP):
 
   signals = [
-    ("FORCE", "PRE_COLLISION", 0), 
+    ("FORCE", "PRE_COLLISION", 0),
     ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0),
     ("TSGN1", "RSA1", 0),
     ("SPDVAL1", "RSA1", 0),
@@ -145,7 +140,7 @@ class CarState():
     self.Angle_Speed = [255,160,100,80,70,60,55,50,40,33,27,17,12]
     if not travis:
       self.arne_pm = messaging_arne.PubMaster(['liveTrafficData', 'arne182Status'])
-      
+
     # initialize can parser
     self.car_fingerprint = CP.carFingerprint
 
@@ -207,7 +202,7 @@ class CarState():
       self.angle_steers = cp.vl["STEER_ANGLE_SENSOR"]['STEER_ANGLE'] + cp.vl["STEER_ANGLE_SENSOR"]['STEER_FRACTION']
     self.angle_steers_rate = cp.vl["STEER_ANGLE_SENSOR"]['STEER_RATE']
     can_gear = int(cp.vl["GEAR_PACKET"]['GEAR'])
-    self.gear_shifter = parse_gear_shifter(can_gear, self.shifter_values)
+    self.gear_shifter = parse_gear_shifter(self.shifter_values.get(can_gear, None))
     try:
       self.econ_on = cp.vl["GEAR_PACKET"]['ECON_ON']
     except:
@@ -236,7 +231,7 @@ class CarState():
         print("Right Blindspot Detected")
       else:
         msg.arne182Status.rightBlindspot = bool(0)
-    
+
     msg.arne182Status.gasbuttonstatus = self.gasbuttonstatus
     if not travis:
       self.arne_pm.send('arne182Status', msg)
@@ -256,7 +251,7 @@ class CarState():
     self.steer_torque_motor = cp.vl["STEER_TORQUE_SENSOR"]['STEER_TORQUE_EPS']
     # we could use the override bit from dbc, but it's triggered at too high torque values
     self.steer_override = abs(self.steer_torque_driver) > STEER_THRESHOLD
-    
+
     self.user_brake = 0
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       self.v_cruise_pcm = cp.vl["DSU_CRUISE"]['SET_SPEED']
@@ -300,7 +295,7 @@ class CarState():
 
 
     self.v_cruise_pcm = min(max(7, int(self.v_cruise_pcm) - self.setspeedoffset),169)
-    
+
     if not self.left_blinker_on and not self.right_blinker_on:
       self.Angles[self.Angle_counter] = abs(self.angle_steers)
       #self.Angles_later[self.Angle_counter] = abs(angle_later)
@@ -320,18 +315,18 @@ class CarState():
       self.generic_toggle = bool(cp.vl["LIGHT_STALK"]['AUTO_HIGH_BEAM'])
 
     self.stock_aeb = bool(cp_cam.vl["PRE_COLLISION"]["PRECOLLISION_ACTIVE"] and cp_cam.vl["PRE_COLLISION"]["FORCE"] < -1e-5)
-    
+
     self.barriers = cp_cam.vl["LKAS_HUD"]['BARRIERS']
     self.rightline = cp_cam.vl["LKAS_HUD"]['RIGHT_LINE']
     self.leftline = cp_cam.vl["LKAS_HUD"]['LEFT_LINE']
-    
+
     self.tsgn1 = cp_cam.vl["RSA1"]['TSGN1']
     self.spdval1 = cp_cam.vl["RSA1"]['SPDVAL1']
-    
+
     self.splsgn1 = cp_cam.vl["RSA1"]['SPLSGN1']
     self.tsgn2 = cp_cam.vl["RSA1"]['TSGN2']
     self.spdval2 = cp_cam.vl["RSA1"]['SPDVAL2']
-    
+
     self.splsgn2 = cp_cam.vl["RSA1"]['SPLSGN2']
     self.tsgn3 = cp_cam.vl["RSA2"]['TSGN3']
     self.splsgn3 = cp_cam.vl["RSA2"]['SPLSGN3']

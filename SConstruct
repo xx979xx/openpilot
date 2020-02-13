@@ -66,6 +66,7 @@ else:
   rpath = ["phonelibs/capnp-cpp/x64/lib",
            "external/tensorflow/lib",
            "cereal",
+           "phonelibs/zmq/x64/lib",
            "selfdrive/common"]
 
   # allows shared libraries to work globally

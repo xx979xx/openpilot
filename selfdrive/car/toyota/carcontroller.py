@@ -4,7 +4,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, 
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_ipas_steer_command, create_accel_command, \
                                            create_acc_cancel_command, create_fcw_command
-from selfdrive.car.toyota.values import CAR, ECU, STATIC_MSGS, SteerLimitParams
+from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, SteerLimitParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -34,17 +34,17 @@ RIGHT_BLINDSPOT = b'\x42'
 BLINDSPOTALWAYSON = False
 
 
-#def set_blindspot_debug_mode(lr,enable):
-#  if enable:
-#    m = lr + b'\x02\x10\x60\x00\x00\x00\x00'
-#  else:
-#    m = lr + b'\x02\x10\x01\x00\x00\x00\x00'
-#  return make_can_msg(0x750, m, 0)
+def set_blindspot_debug_mode(lr,enable):
+  if enable:
+    m = lr + b'\x02\x10\x60\x00\x00\x00\x00'
+  else:
+    m = lr + b'\x02\x10\x01\x00\x00\x00\x00'
+  return make_can_msg(0x750, m, 0)
 
 
-#def poll_blindspot_status(lr):
-#  m = lr + b'\x02\x21\x69\x00\x00\x00\x00'
-#  return make_can_msg(0x750, m, 0)
+def poll_blindspot_status(lr):
+  m = lr + b'\x02\x21\x69\x00\x00\x00\x00'
+  return make_can_msg(0x750, m, 0)
 
 
 def accel_hysteresis(accel, accel_steady, enabled):
@@ -122,9 +122,9 @@ class CarController():
     self.steer_rate_limited = False
 
     self.fake_ecus = set()
-    if enable_camera: self.fake_ecus.add(ECU.CAM)
-    if enable_dsu: self.fake_ecus.add(ECU.DSU)
-    if enable_apg: self.fake_ecus.add(ECU.APGS)
+    if enable_camera: self.fake_ecus.add(Ecu.fwdCamera)
+    if enable_dsu: self.fake_ecus.add(Ecu.dsu)
+    if enable_apg: self.fake_ecus.add(Ecu.apgs)
 
     self.packer = CANPacker(dbc_name)
 
@@ -218,65 +218,13 @@ class CarController():
 
     can_sends = []
     
-    # Enable blindspot debug mode once
-    if frame > 1000: # 10 seconds after start
-      if BLINDSPOTALWAYSON:
-        self.blindspot_blink_counter_left += 1
-        self.blindspot_blink_counter_right += 1
-        #print("debug blindspot alwayson!")
-      elif CS.left_blinker_on:
-        self.blindspot_blink_counter_left += 1
-        #print("debug Left Blinker on")
-      elif CS.right_blinker_on:
-        self.blindspot_blink_counter_right += 1
-        #print("debug Right Blinker on")
-      else:
-        self.blindspot_blink_counter_left = 0
-        self.blindspot_blink_counter_right = 0
-        if self.blindspot_debug_enabled_left:
-          #can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
-          can_sends.append(make_can_msg(0x750, b'\x41\x02\x10\x01\x00\x00\x00\x00', 0))
-          self.blindspot_debug_enabled_left = False
-          #print ("debug Left blindspot debug disabled")
-        if self.blindspot_debug_enabled_right:
-          #can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
-          can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x01\x00\x00\x00\x00', 0))
-          self.blindspot_debug_enabled_right = False
-          #print("debug Right blindspot debug disabled")
-      if self.blindspot_blink_counter_left > 9 and not self.blindspot_debug_enabled_left: #check blinds
-        #can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
-        can_sends.append(make_can_msg(0x750, b'\x41\x02\x10\x60\x00\x00\x00\x00', 0))
-        #print("debug Left blindspot debug enabled")
-        self.blindspot_debug_enabled_left = True
-      if self.blindspot_blink_counter_right > 5 and not self.blindspot_debug_enabled_right: #enable blindspot debug mode
-        if CS.v_ego > 6: #polling at low speeds switches camera off
-          can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x60\x00\x00\x00\x00', 0))
-          #can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, True))
-          #print("debug Right blindspot debug enabled")
-          self.blindspot_debug_enabled_right = True
-      if CS.v_ego < 6 and self.blindspot_debug_enabled_right: # if enabled and speed falls below 6m/s
-        can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x01\x00\x00\x00\x00', 0))
-        #can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
-        self.blindspot_debug_enabled_right = False
-        #print("debug Right blindspot debug disabled")
-    if self.blindspot_debug_enabled_left:
-      if frame % 20 == 0 and frame > 1001:  # Poll blindspots at 5 Hz
-        #can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
-        can_sends.append(make_can_msg(0x750, b'\x41\x02\x21\x69\x00\x00\x00\x00', 0))
-        #print("debug Left blindspot poll")
-    if self.blindspot_debug_enabled_right:
-      if frame % 20 == 10 and frame > 1005:  # Poll blindspots at 5 Hz
-        can_sends.append(make_can_msg(0x750, b'\x42\x02\x21\x69\x00\x00\x00\x00', 0))
-        #can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
-        #print("debug Right blindspot poll")
-        
     #*** control msgs ***
     #print("steer {0} {1} {2} {3}".format(apply_steer, min_lim, max_lim, CS.steer_torque_motor)
 
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
-    if ECU.CAM in self.fake_ecus:
+    if Ecu.fwdCamera in self.fake_ecus:
       if self.angle_control:
         can_sends.append(create_steer_command(self.packer, 0., 0, frame))
       else:
@@ -284,12 +232,12 @@ class CarController():
 
     if self.angle_control:
       can_sends.append(create_ipas_steer_command(self.packer, apply_angle, self.steer_angle_enabled,
-                                                 ECU.APGS in self.fake_ecus))
-    elif ECU.APGS in self.fake_ecus:
+                                                 Ecu.apgs in self.fake_ecus))
+    elif Ecu.apgs in self.fake_ecus:
       can_sends.append(create_ipas_steer_command(self.packer, 0, 0, True))
 
     # we can spam can to cancel the system even if we are using lat only control
-    if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and ECU.CAM in self.fake_ecus):
+    if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and Ecu.fwdCamera in self.fake_ecus):
       lead = lead or CS.v_ego < 12.    # at low speed we always assume the lead is present do ACC can be engaged
 
       # Lexus IS uses a different cancellation message
@@ -322,10 +270,10 @@ class CarController():
     if pcm_cancel_cmd:
       send_ui = True
 
-    if (frame % 100 == 0 or send_ui) and ECU.CAM in self.fake_ecus:
+    if (frame % 100 == 0 or send_ui) and Ecu.fwdCamera in self.fake_ecus:
       can_sends.append(create_ui_command(self.packer, steer, pcm_cancel_cmd, left_line, right_line, left_lane_depart, right_lane_depart))
 
-    if frame % 100 == 0 and ECU.DSU in self.fake_ecus:
+    if frame % 100 == 0 and Ecu.dsu in self.fake_ecus:
       can_sends.append(create_fcw_command(self.packer, fcw))
 
     #*** static msgs ***
@@ -333,5 +281,57 @@ class CarController():
     for (addr, ecu, cars, bus, fr_step, vl) in STATIC_MSGS:
       if frame % fr_step == 0 and ecu in self.fake_ecus and self.car_fingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
-
+        
+    # Enable blindspot debug mode once
+    if frame > 1000: # 10 seconds after start
+      if BLINDSPOTALWAYSON:
+        self.blindspot_blink_counter_left += 1
+        self.blindspot_blink_counter_right += 1
+        #print("debug blindspot alwayson!")
+      elif CS.left_blinker_on:
+        self.blindspot_blink_counter_left += 1
+        #print("debug Left Blinker on")
+      elif CS.right_blinker_on:
+        self.blindspot_blink_counter_right += 1
+        #print("debug Right Blinker on")
+      else:
+        self.blindspot_blink_counter_left = 0
+        self.blindspot_blink_counter_right = 0
+        if self.blindspot_debug_enabled_left:
+          can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, False))
+          #can_sends.append(make_can_msg(0x750, b'\x41\x02\x10\x01\x00\x00\x00\x00', 0))
+          self.blindspot_debug_enabled_left = False
+          #print ("debug Left blindspot debug disabled")
+        if self.blindspot_debug_enabled_right:
+          can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
+          #can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x01\x00\x00\x00\x00', 0))
+          self.blindspot_debug_enabled_right = False
+          #print("debug Right blindspot debug disabled")
+      if self.blindspot_blink_counter_left > 9 and not self.blindspot_debug_enabled_left: #check blinds
+        can_sends.append(set_blindspot_debug_mode(LEFT_BLINDSPOT, True))
+        #can_sends.append(make_can_msg(0x750, b'\x41\x02\x10\x60\x00\x00\x00\x00', 0))
+        #print("debug Left blindspot debug enabled")
+        self.blindspot_debug_enabled_left = True
+      if self.blindspot_blink_counter_right > 5 and not self.blindspot_debug_enabled_right: #enable blindspot debug mode
+        if CS.v_ego > 6: #polling at low speeds switches camera off
+          #can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x60\x00\x00\x00\x00', 0))
+          can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, True))
+          #print("debug Right blindspot debug enabled")
+          self.blindspot_debug_enabled_right = True
+      if CS.v_ego < 6 and self.blindspot_debug_enabled_right: # if enabled and speed falls below 6m/s
+        #can_sends.append(make_can_msg(0x750, b'\x42\x02\x10\x01\x00\x00\x00\x00', 0))
+        can_sends.append(set_blindspot_debug_mode(RIGHT_BLINDSPOT, False))
+        self.blindspot_debug_enabled_right = False
+        #print("debug Right blindspot debug disabled")
+    if self.blindspot_debug_enabled_left:
+      if frame % 20 == 0 and frame > 1001:  # Poll blindspots at 5 Hz
+        can_sends.append(poll_blindspot_status(LEFT_BLINDSPOT))
+        #can_sends.append(make_can_msg(0x750, b'\x41\x02\x21\x69\x00\x00\x00\x00', 0))
+        #print("debug Left blindspot poll")
+    if self.blindspot_debug_enabled_right:
+      if frame % 20 == 10 and frame > 1005:  # Poll blindspots at 5 Hz
+        #can_sends.append(make_can_msg(0x750, b'\x42\x02\x21\x69\x00\x00\x00\x00', 0))
+        can_sends.append(poll_blindspot_status(RIGHT_BLINDSPOT))
+        #print("debug Right blindspot poll")
+        
     return can_sends

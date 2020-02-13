@@ -4,7 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event, create_event_arne
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
-from selfdrive.car.toyota.values import ECU, ECU_FINGERPRINT, CAR, NO_STOP_TIMER_CAR, TSS2_CAR, FINGERPRINTS
+from selfdrive.car.toyota.values import Ecu, ECU_FINGERPRINT, CAR, NO_STOP_TIMER_CAR, TSS2_CAR, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -113,6 +113,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
       ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
 
+    elif candidate == CAR.LEXUS_RX:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.79
+      ret.steerRatio = 14.8
+      tire_stiffness_factor = 0.5533
+      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.05]]
+      ret.lateralTuning.pid.kf = 0.00006
+
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
       ret.safetyParam = 73
@@ -122,6 +132,16 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+
+    elif candidate == CAR.LEXUS_RX_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.79
+      ret.steerRatio = 14.8
+      tire_stiffness_factor = 0.5533  # not optimized yet
+      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.lateralTuning.pid.kf = 0.00007818594
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
@@ -142,7 +162,17 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG #mean between normal and hybrid
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
-
+      
+    elif candidate == CAR.HIGHLANDER_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.84988  # 112.2 in = 2.84988 m
+      ret.steerRatio = 16.0
+      tire_stiffness_factor = 0.8
+      ret.mass = 4700. * CV.LB_TO_KG + STD_CARGO_KG  # 4260 + 4-5 people
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18], [0.015]]  # community tuning
+      ret.lateralTuning.pid.kf = 0.00012  # community tuning
+      
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
       ret.safetyParam = 73
@@ -163,7 +193,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.03]]
       ret.lateralTuning.pid.kf = 0.00006
 
-    elif candidate in [CAR.RAV4_TSS2, CAR.RAV4H_TSS2]:
+    elif candidate == CAR.RAV4_TSS2:
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.68986
@@ -171,6 +201,26 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.7933
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.mass = 3370. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kf = 0.00007818594
+      
+    elif candidate == CAR.RAV4H_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.68986
+      ret.steerRatio = 14.3
+      tire_stiffness_factor = 0.7933
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.mass = 3800. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kf = 0.00007818594
+      
+    elif candidate == CAR.RAV4H_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.68986
+      ret.steerRatio = 14.3
+      tire_stiffness_factor = 0.7933
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.mass = 3800. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kf = 0.00007818594
 
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
@@ -222,6 +272,16 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3108 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
       ret.lateralTuning.pid.kf = 0.00007
+      
+    elif candidate == CAR.LEXUS_NXH:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 2.66
+      ret.steerRatio = 14.7
+      tire_stiffness_factor = 0.444 # not optimized yet
+      ret.mass = 4070 * CV.LB_TO_KG + STD_CARGO_KG 
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.lateralTuning.pid.kf = 0.00006      
 
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
@@ -245,10 +305,10 @@ class CarInterface(CarInterfaceBase):
     ret.brakeMaxBP = [0., 35., 55.]
     ret.brakeMaxV = [1.0, 0.8, 0.7]
 
-    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.CAM) or has_relay
+    ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
     # In TSS2 cars the camera does long control
-    ret.enableDsu = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.DSU) and candidate not in TSS2_CAR
-    ret.enableApgs = False  # is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, ECU.APGS)
+    ret.enableDsu = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.dsu) and candidate not in TSS2_CAR
+    ret.enableApgs = False  # is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.apgs)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
     ret.openpilotLongitudinalControl = ret.enableCamera and (ret.enableDsu or candidate in TSS2_CAR)
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
