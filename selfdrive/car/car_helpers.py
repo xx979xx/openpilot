@@ -78,7 +78,7 @@ def fingerprint(logcan, sendcan, has_relay):
     cached_fingerprint = params.get('CachedFingerprint')
   else:
     cached_fingerprint = None
-
+   
   if car_params is not None:
     car_params = car.CarParams.from_bytes(car_params)
   if has_relay:
@@ -110,11 +110,17 @@ def fingerprint(logcan, sendcan, has_relay):
   car_fingerprint = None
   done = False
 
+ 
   if cached_fingerprint is not None and use_car_caching:  # if we previously identified a car and fingerprint and user hasn't disabled caching
     cached_fingerprint = json.loads(cached_fingerprint)
-    finger[0] = {key: value for key, value in cached_fingerprint[1].items()}
-    source = car.CarParams.FingerprintSource.can
-    return (str(cached_fingerprint[0]), finger, vin, car_fw, source)
+    if cached_fingerprint[0] is None or len(cached_fingerprint) < 3:
+      params.delete('CachedFingerprint')
+    else:
+      finger[0] = {key: value for key, value in cached_fingerprint[2].items()}
+      source = car.CarParams.FingerprintSource.can
+      return (str(cached_fingerprint[0]), finger, vin, car_fw, cached_fingerprint[1])
+  
+  
 
   while not done:
     a = messaging.get_one_can(logcan)
@@ -161,6 +167,7 @@ def fingerprint(logcan, sendcan, has_relay):
     source = car.CarParams.FingerprintSource.fw
 
   cloudlog.warning("fingerprinted %s", car_fingerprint)
+  params.put("CachedFingerprint", json.dumps([car_fingerprint, source, {int(key): value for key, value in finger[0].items()}]))
   return car_fingerprint, finger, vin, car_fw, source
 
 def crash_log(candidate):
