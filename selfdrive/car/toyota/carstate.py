@@ -221,7 +221,7 @@ class CarState():
                          K=[[0.12287673], [0.29666309]])
     self.v_ego = 0.0
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, frame):
     # update prevs, update must run once per loop
     self.prev_left_blinker_on = self.left_blinker_on
     self.prev_right_blinker_on = self.right_blinker_on
@@ -286,18 +286,19 @@ class CarState():
       self.gasbuttonstatus = 0
     msg = messaging_arne.new_message()
     msg.init('arne182Status')
-    if cp.vl["DEBUG"]['BLINDSPOTSIDE']==65: #Left
-      if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
-        msg.arne182Status.leftBlindspot = bool(1)
-        print("Left Blindspot Detected")
-      else:
-        msg.arne182Status.leftBlindspot = bool(0)
-    elif  cp.vl["DEBUG"]['BLINDSPOTSIDE']==66: #Right
-      if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
-        msg.arne182Status.rightBlindspot = bool(1)
-        print("Right Blindspot Detected")
-      else:
-        msg.arne182Status.rightBlindspot = bool(0)
+    if frame > 999:
+      if cp.vl["DEBUG"]['BLINDSPOTSIDE']==65: #Left
+        if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
+          msg.arne182Status.leftBlindspot = bool(1)
+          print("Left Blindspot Detected")
+        else:
+          msg.arne182Status.leftBlindspot = bool(0)
+      elif  cp.vl["DEBUG"]['BLINDSPOTSIDE']==66: #Right
+        if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
+          msg.arne182Status.rightBlindspot = bool(1)
+          print("Right Blindspot Detected")
+        else:
+          msg.arne182Status.rightBlindspot = bool(0)
 
     msg.arne182Status.gasbuttonstatus = self.gasbuttonstatus
     if not travis:
