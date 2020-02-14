@@ -40,6 +40,7 @@ class opParams:
     """
 
     self.default_params = {'camera_offset': {'default': 0.06, 'allowed_types': [float, int], 'description': 'Your camera offset to use in lane_planner.py', 'live': True},
+                           'curvature_factor': {'default': 1.0, 'allowed_types': [float, int], 'description': 'Multiplier for the curvature slowdown. Increase for less braking.', 'live': False},
                            'awareness_factor': {'default': 10., 'allowed_types': [float, int], 'description': 'Multiplier for the awareness times', 'live': False},
                            'use_car_caching': {'default': True, 'allowed_types': [bool], 'description': 'Whether to use fingerprint caching', 'live': False},
                            'osm': {'default': True, 'allowed_types': [bool], 'description': 'Whether to use OSM for drives', 'live': False},
