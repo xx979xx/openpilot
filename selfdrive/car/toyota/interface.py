@@ -3,7 +3,7 @@ from cereal import car, arne182
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.drive_helpers import EventTypes as ET, create_event, create_event_arne
 from selfdrive.controls.lib.vehicle_model import VehicleModel
-from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser
+from selfdrive.car.toyota.carstate import CarState, get_can_parser, get_cam_can_parser, get_can_parser_init
 from selfdrive.car.toyota.values import Ecu, ECU_FINGERPRINT, CAR, NO_STOP_TIMER_CAR, TSS2_CAR, FINGERPRINTS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, is_ecu_disconnected, gen_empty_fingerprint
 from selfdrive.swaglog import cloudlog
@@ -26,6 +26,7 @@ class CarInterface(CarInterfaceBase):
     self.CS = CarState(CP)
 
     self.cp = get_can_parser(CP)
+    self.cp_init = get_can_parser_init(CP)
     self.cp_cam = get_cam_can_parser(CP)
 
     self.CC = None
@@ -346,10 +347,13 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def update(self, c, can_strings):
     # ******************* do can recv *******************
-    self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
-
-    self.CS.update(self.cp, self.cp_cam)
+    if self.frame < 1000:
+      self.cp_init.update_strings(can_strings)
+      self.CS.update(self.cp_init, self.cp_cam, self.frame)
+    else:
+      self.cp.update_strings(can_strings)
+      self.CS.update(self.cp, self.cp_cam, self.frame)
 
     # create message
     ret = car.CarState.new_message()
