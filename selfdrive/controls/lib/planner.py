@@ -15,11 +15,17 @@ from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
+from common.travis_checker import travis
 from common.op_params import opParams
 op_params = opParams()
 offset = op_params.get('speed_offset', 0) # m/s
 osm = op_params.get('osm', True)
 
+if not travis:
+  curvature_factor = opParams().get('curvature_factor', default=1.0)
+else:
+  curvature_factor = 1.0
+  
 MAX_SPEED = 255.0
 NO_CURVATURE_SPEED = 90.0
 
@@ -243,7 +249,7 @@ class Planner():
           v_speedlimit_ahead = speed_limit_ahead
       if sm['liveMapData'].curvatureValid and osm and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
         curvature = abs(sm['liveMapData'].curvature)
-        radius = 1/max(1e-4, curvature)
+        radius = 1/max(1e-4, curvature) * curvature_factor
         if gas_button_status == 1:
           radius = radius * 2.0
         elif gas_button_status == 2:
