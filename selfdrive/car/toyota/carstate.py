@@ -367,7 +367,13 @@ class CarState():
     if not self.left_blinker_on and not self.right_blinker_on:
       self.Angles[self.Angle_counter] = abs(self.angle_steers)
       #self.Angles_later[self.Angle_counter] = abs(angle_later)
-      self.v_cruise_pcm = int(min(self.v_cruise_pcm, interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
+      if self.gasbuttonstatus ==1:
+        factor = 1.6
+      elif self.gasbuttonstatus == 2:
+        factor = 1.0
+      else:
+        factor = 1.3
+      self.v_cruise_pcm = int(min(self.v_cruise_pcm, factor * interp(np.max(self.Angles), self.Angle, self.Angle_Speed)))
       #self.v_cruise_pcm = int(min(self.v_cruise_pcm, self.brakefactor * interp(np.max(self.Angles_later), self.Angle, self.Angle_Speed)))
     else:
       self.Angles[self.Angle_counter] = 0
