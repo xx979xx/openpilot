@@ -507,7 +507,7 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.speedlimitaheaddistance = datad.speedLimitAheadDistance;
     s->scene.speedlimit_valid = datad.speedLimitValid;
   } else if (eventd.which == cereal_Event_carState) {
-    struct cereal_GpsLocationData datad;
+    struct cereal_CarState datad;
     cereal_read_CarState(&datad, eventd.carState);
     s->scene.brakeLights = datad.brakeLights;
     if(s->scene.leftBlinker!=datad.leftBlinker || s->scene.rightBlinker!=datad.rightBlinker)
