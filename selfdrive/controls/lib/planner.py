@@ -15,17 +15,10 @@ from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState, MIN_CAN_SPEED
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
-from common.travis_checker import travis
 from common.op_params import opParams
 op_params = opParams()
-offset = op_params.get('speed_offset', 0) # m/s
 osm = op_params.get('osm', True)
 
-if not travis:
-  curvature_factor = opParams().get('curvature_factor', default=1.0)
-else:
-  curvature_factor = 1.0
-  
 MAX_SPEED = 255.0
 NO_CURVATURE_SPEED = 90.0
 
@@ -93,7 +86,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):# , angle_later)
   #a_x_allowed2 = a_total_max - a_y2
   a_target[1] = min(a_target[1], a_x_allowed)#, a_x_allowed2)
   a_target[0] = min(a_target[0], a_target[1])
-  
+
   return a_target
 
 
@@ -121,6 +114,8 @@ class Planner():
 
     self.params = Params()
     self.first_loop = True
+
+    self.last_time = 0.
 
   def choose_solution(self, v_cruise_setpoint, enabled, lead_1, lead_2, steeringAngle):
     center_x = -2.5 # Wheel base 2.5m
@@ -169,6 +164,12 @@ class Planner():
   def update(self, sm, pm, CP, VM, PP, arne_sm):
     """Gets called when new radarState is available"""
     cur_time = sec_since_boot()
+    offset = 0.
+    # we read offset value every 5 seconds
+    if cur_time - self.last_time > 5.:
+        offset_val = self.params.get("SpeedLimitOffset", encoding='utf8')
+        offset = 0 if not offset_val.isnumeric() else int(offset_val)
+        self.last_time = cur_time
     gas_button_status = arne_sm['arne182Status'].gasbuttonstatus
     v_ego = sm['carState'].vEgo
     blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
@@ -219,14 +220,13 @@ class Planner():
     v_speedlimit = NO_CURVATURE_SPEED
     v_curvature_map = NO_CURVATURE_SPEED
     v_speedlimit_ahead = NO_CURVATURE_SPEED
-    now = datetime.now()  
+    now = datetime.now()
     try:
       if sm['liveMapData'].speedLimitValid and osm and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
         speed_limit = sm['liveMapData'].speedLimit
-        if speed_limit is not None and offset is not None and speed_limit > offset:
-          v_speedlimit = speed_limit + offset
-        else:
-          v_speedlimit = speed_limit
+        if speed_limit is not None and offset != 0.:
+          # offset is in percentage,.
+          v_speedlimit = speed_limit_ahead * (1. + offset/100)
       else:
         speed_limit = None
       if sm['liveMapData'].speedLimitAheadValid and sm['liveMapData'].speedLimitAheadDistance < speed_ahead_distance and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
@@ -243,22 +243,15 @@ class Planner():
           speed_limit_ahead = sm['liveMapData'].speedLimitAhead + (speed_limit - sm['liveMapData'].speedLimitAhead)*(sm['liveMapData'].speedLimitAheadDistance - distanceatlowlimit)/(speed_ahead_distance - distanceatlowlimit)
         else:
           speed_limit_ahead = sm['liveMapData'].speedLimitAhead
-        if speed_limit_ahead is not None and offset is not None and speed_limit_ahead > offset:
-          v_speedlimit_ahead = speed_limit_ahead + offset
-        else:
-          v_speedlimit_ahead = speed_limit_ahead
+        if speed_limit_ahead is not None and offset != 0.:
+          x
+          v_speedlimit_ahead = speed_limit * (1. + offset/100)
       if sm['liveMapData'].curvatureValid and osm and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
         curvature = abs(sm['liveMapData'].curvature)
-        radius = 1/max(1e-4, curvature) * curvature_factor
-        if gas_button_status == 1:
-          radius = radius * 2.0
-        elif gas_button_status == 2:
-          radius = radius * 1.0
-        else:
-          radius = radius * 1.5
+        radius = 1/max(1e-4, curvature)
         if radius > 500:
           c=0.9 # 0.9 at 1000m = 108 kph
-        elif radius > 250: 
+        elif radius > 250:
           c = 3.5-13/2500*radius # 2.2 at 250m 84 kph
         else:
           c= 3.0 - 2/625 *radius # 3.0 at 15m 24 kph
@@ -266,10 +259,10 @@ class Planner():
         v_curvature_map = min(NO_CURVATURE_SPEED, v_curvature_map)
     except KeyError:
       pass
-    
+
     decel_for_turn = bool(v_curvature_map < min([v_cruise_setpoint, v_speedlimit, v_ego + 1.]))
     v_cruise_setpoint = min([v_cruise_setpoint, v_curvature_map, v_speedlimit, v_speedlimit_ahead])
-    
+
     # Calculate speed for normal cruise control
     if enabled and not self.first_loop and not sm['carState'].brakePressed and not sm['carState'].gasPressed:
       accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following, gas_button_status)]
@@ -280,7 +273,7 @@ class Planner():
         # if required so, force a smooth deceleration
         accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
         accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
-        
+
       if decel_for_turn and sm['liveMapData'].distToTurn < speed_ahead_distance:
         time_to_turn = max(1.0, sm['liveMapData'].distToTurn / max((v_ego + v_curvature_map)/2, 1.))
         required_decel = min(0, (v_curvature_map - v_ego) / time_to_turn)
@@ -330,7 +323,7 @@ class Planner():
     if self.mpc1.new_lead:
       self.fcw_checker.reset_lead(cur_time)
 
-    
+
     fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time,
                                   sm['controlsState'].active,
                                   v_ego, sm['carState'].aEgo,
@@ -365,11 +358,11 @@ class Planner():
     plan_send.plan.vTargetFuture = float(self.v_acc_future)
     plan_send.plan.hasLead = self.mpc1.prev_lead_status
     plan_send.plan.longitudinalPlanSource = self.longitudinalPlanSource
-    
+
     plan_send.plan.vCurvature = float(v_curvature_map)
     plan_send.plan.decelForTurn = bool(decel_for_turn or v_speedlimit_ahead < min([v_speedlimit, v_ego + 1.]))
     plan_send.plan.mapValid = True
-    
+
     radar_valid = not (radar_dead or radar_fault)
     plan_send.plan.radarValid = bool(radar_valid)
     plan_send.plan.radarCanError = bool(radar_can_error)
