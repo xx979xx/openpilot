@@ -174,7 +174,8 @@ class Planner():
     # we read offset value every 5 seconds
     
     if self.last_time > 5:
-      self.offset = int(self.params.get("SpeedLimitOffset", encoding='utf8'))
+      if not travis:
+        self.offset = int(self.params.get("SpeedLimitOffset", encoding='utf8'))
       self.last_time = 0
     self.last_time = self.last_time + 1
       
