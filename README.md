@@ -73,7 +73,7 @@ More info about how to install this fork can be found [here](https://medium.com/
 - Forward collision warning actually brakes for you.
 - Blind Spot Monitoring for all of the toyota which will be added to control ALCA. For right now it is always on. It will flash rapidly when stopped and if the object is detected. 
 - Ability to ruduce or Increase curvature Factor from `op_edit.py` (`python /data/openpilot/op_edit.py`) It will also works with eco and sport mode. If using eco mode then it will start breaking early (350 m before) if using sport mode it will slow down little late (150 m).
-- Ability to change the SpeedLimit Offset directly from APK. It is based in percentages. For Example, if -1% at 60mph, it will be  approx. 59.4mph, -10% is roughly 54mph etc.
+- Ability to change the SpeedLimit Offset directly from APK. It is based in percentages. For Example, if -1% at 60mph, it will be  approx. 59.4mph, -10% is roughly 54mph etc. (Thank you eFini for the help)
 - 
 
 # Licensing
