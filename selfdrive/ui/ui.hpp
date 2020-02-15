@@ -203,6 +203,7 @@ typedef struct UIState {
   SubSocket *livempc_sock;
   SubSocket *map_data_sock;
   SubSocket *uilayout_sock;
+  SubSocket *gps_sock;
   Poller * poller;
   Poller * pollerarne182;
 
