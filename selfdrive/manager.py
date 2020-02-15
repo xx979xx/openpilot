@@ -64,10 +64,10 @@ if __name__ == "__main__":
   from common.spinner import Spinner
 else:
   from common.spinner import FakeSpinner as Spinner
-  
+
 if not (os.system("python3 -m pip list | grep 'scipy' ") == 0):
   os.system("cd /data/openpilot/installer/scipy_installer/ && ./scipy_installer")
-  
+
 import importlib
 import traceback
 from multiprocessing import Process
@@ -510,6 +510,9 @@ def main():
     params.put("LastUpdateTime", t.encode('utf8'))
   if params.get("OpenpilotEnabledToggle") is None:
     params.put("OpenpilotEnabledToggle", "1")
+  if params.get("LaneChangeEnabled") is None:
+    params.put("LaneChangeEnabled", "1")
+
 
   # is this chffrplus?
   if os.getenv("PASSIVE") is not None:
