@@ -520,7 +520,7 @@ static void ui_draw_vision_speedlimit(UIState *s) {
   if (s->is_ego_over_limit) {
     hysteresis_offset = 0.0;
   }
-  s->is_ego_over_limit = is_speedlim_valid && s->scene.v_ego > (speedlimit + s->speed_lim_off + hysteresis_offset);
+  s->is_ego_over_limit = is_speedlim_valid && s->scene.v_ego > (speedlimit + hysteresis_offset);
 
   int viz_speedlim_w = 180;
   int viz_speedlim_h = 202;
