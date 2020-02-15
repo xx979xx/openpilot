@@ -120,7 +120,7 @@ class Planner():
 
     self.params = Params()
     self.first_loop = True
-
+    self.offset = 0
     self.last_time = 0
 
   def choose_solution(self, v_cruise_setpoint, enabled, lead_1, lead_2, steeringAngle):
@@ -170,12 +170,11 @@ class Planner():
   def update(self, sm, pm, CP, VM, PP, arne_sm):
     """Gets called when new radarState is available"""
     cur_time = sec_since_boot()
-    offset = 0
+    
     # we read offset value every 5 seconds
     
     if self.last_time > 5:
-      offset_val = self.params.get("SpeedLimitOffset", encoding='utf8')
-      offset = int(offset_val)
+      self.offset = int(self.params.get("SpeedLimitOffset", encoding='utf8'))
       self.last_time = 0
     self.last_time = self.last_time + 1
       
@@ -235,7 +234,7 @@ class Planner():
         speed_limit = sm['liveMapData'].speedLimit
         if speed_limit is not None:
           # offset is in percentage,.
-          v_speedlimit = speed_limit * (1. + offset/100.0)
+          v_speedlimit = speed_limit * (1. + self.offset/100.0)
       else:
         speed_limit = None
       if sm['liveMapData'].speedLimitAheadValid and sm['liveMapData'].speedLimitAheadDistance < speed_ahead_distance and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
@@ -253,7 +252,7 @@ class Planner():
         else:
           speed_limit_ahead = sm['liveMapData'].speedLimitAhead
         if speed_limit_ahead is not None:
-          v_speedlimit_ahead = speed_limit_ahead * (1. + offset/100.0)
+          v_speedlimit_ahead = speed_limit_ahead * (1. + self.offset/100.0)
       if sm['liveMapData'].curvatureValid and osm and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
         curvature = abs(sm['liveMapData'].curvature)
         radius = 1/max(1e-4, curvature) * curvature_factor
