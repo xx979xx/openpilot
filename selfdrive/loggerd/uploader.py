@@ -101,8 +101,8 @@ class Uploader():
     self.last_resp = None
     self.last_exc = None
 
-    self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1}
-    self.high_priority = {"rlog.bz2": 0, "fcamera.hevc": 1, "dcamera.hevc": 2}
+    self.immediate_priority = {"qlog.bz2": 0, "qcamera.ts": 1, "rlog.bz2": 2}
+    self.high_priority = {"fcamera.hevc": 0, "dcamera.hevc": 1}
 
   def clean_dirs(self):
     try:
