@@ -116,6 +116,7 @@ static void ui_init(UIState *s) {
   s->radarstate_sock = SubSocket::create(s->ctx, "radarState");
   s->carstate_sock = SubSocket::create(s->ctx, "carState");
   s->livempc_sock = SubSocket::create(s->ctx, "liveMpc");
+  s->gps_sock = SubSocket::create(s->ctx, "gpsLocationExternal");
   s->thermal_sock = SubSocket::create(s->ctxarne182, "thermalonline");
 
   assert(s->model_sock != NULL);
@@ -125,6 +126,7 @@ static void ui_init(UIState *s) {
   assert(s->radarstate_sock != NULL);
   assert(s->carstate_sock != NULL);
   assert(s->livempc_sock != NULL);
+  assert(s->gps_sock != NULL);
   assert(s->thermal_sock != NULL);
 
   s->poller = Poller::create({
@@ -135,6 +137,7 @@ static void ui_init(UIState *s) {
                               s->radarstate_sock,
                               s->carstate_sock,
                               s->livempc_sock
+                              s->gps_sock
                              });
   s->pollerarne182 = Poller::create({
                               s->thermal_sock
@@ -504,13 +507,25 @@ void handle_message(UIState *s, Message * msg) {
     s->scene.speedlimitaheaddistance = datad.speedLimitAheadDistance;
     s->scene.speedlimit_valid = datad.speedLimitValid;
   } else if (eventd.which == cereal_Event_carState) {
-    struct cereal_CarState datad;
+    struct cereal_GpsLocationData datad;
     cereal_read_CarState(&datad, eventd.carState);
     s->scene.brakeLights = datad.brakeLights;
     if(s->scene.leftBlinker!=datad.leftBlinker || s->scene.rightBlinker!=datad.rightBlinker)
       s->scene.blinker_blinkingrate = 100;
     s->scene.leftBlinker = datad.leftBlinker;
     s->scene.rightBlinker = datad.rightBlinker;
+  } else if (eventd.which == cereal_Event_gpsLocationExternal) {
+    struct cereal_GpsLocationData datad;
+    cereal_read_GpsLocationData(&datad, eventd.gpsLocationExternal);
+    s->scene.gpsAccuracy = datad.accuracy;
+    if (s->scene.gpsAccuracy > 100)
+    {
+      s->scene.gpsAccuracy = 99.99;
+    }
+    else if (s->scene.gpsAccuracy == 0)
+    {
+      s->scene.gpsAccuracy = 99.8;
+    }
   }
   capn_free(&ctx);
 }
