@@ -136,7 +136,7 @@ static void ui_init(UIState *s) {
                               s->livecalibration_sock,
                               s->radarstate_sock,
                               s->carstate_sock,
-                              s->livempc_sock
+                              s->livempc_sock,
                               s->gps_sock
                              });
   s->pollerarne182 = Poller::create({
