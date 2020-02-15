@@ -56,8 +56,8 @@ class TestUploader(UploaderTestCase):
 
   def gen_order(self, seg1, seg2):
     keys = [f"{self.seg_format.format(i)}/qlog.bz2" for i in seg1]
-    keys += [f"{self.seg_format2.format(i)}/qlog.bz2" for i in seg2]
     keys += [f"{self.seg_format.format(i)}/rlog.bz2" for i in seg1]
+    keys += [f"{self.seg_format2.format(i)}/qlog.bz2" for i in seg2]
     keys += [f"{self.seg_format2.format(i)}/rlog.bz2" for i in seg2]
     for i in seg1:
       keys += [f"{self.seg_format.format(i)}/{f}" for f in ['fcamera.hevc','dcamera.hevc']]
