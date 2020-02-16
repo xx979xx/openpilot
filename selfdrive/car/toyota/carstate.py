@@ -195,7 +195,7 @@ class CarState():
     self.left_blinker_on = 0
     self.right_blinker_on = 0
     self.angle_offset = 0.
-    self.pcm_acc_status = False
+    self.pcm_acc_active = False
     self.init_angle_offset = False
     self.v_cruise_pcmlast = 41.0
     self.setspeedoffset = 34.0
@@ -333,7 +333,7 @@ class CarState():
       minimum_set_speed = 44.0
     else:
       minimum_set_speed = 41.0
-    if cp.vl["PCM_CRUISE"]['CRUISE_STATE'] and not self.pcm_acc_status:
+    if bool(cp.vl["PCM_CRUISE"]['CRUISE_ACTIVE']) and not self.pcm_acc_active:
       if self.v_ego < 12.5:
         self.setspeedoffset = max(min(int(minimum_set_speed-self.v_ego*3.6),(minimum_set_speed-7.0)),0.0)
         self.v_cruise_pcmlast = self.v_cruise_pcm
