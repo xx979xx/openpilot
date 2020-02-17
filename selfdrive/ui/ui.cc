@@ -118,6 +118,7 @@ static void ui_init(UIState *s) {
   s->livempc_sock = SubSocket::create(s->ctx, "liveMpc");
   s->gps_sock = SubSocket::create(s->ctx, "gpsLocationExternal");
   s->thermal_sock = SubSocket::create(s->ctxarne182, "thermalonline");
+  s->arne182_sock = SubSocket::create(s->ctxarne182, "arne182Status");
 
   assert(s->model_sock != NULL);
   assert(s->controlsstate_sock != NULL);
@@ -128,6 +129,7 @@ static void ui_init(UIState *s) {
   assert(s->livempc_sock != NULL);
   assert(s->gps_sock != NULL);
   assert(s->thermal_sock != NULL);
+  assert(s->arne182_sock != NULL);
 
   s->poller = Poller::create({
                               s->model_sock,
@@ -140,7 +142,8 @@ static void ui_init(UIState *s) {
                               s->gps_sock
                              });
   s->pollerarne182 = Poller::create({
-                              s->thermal_sock
+                              s->thermal_sock,
+                              s->arne182_sock
                              });
 
 #ifdef SHOW_SPEEDLIMIT
@@ -545,6 +548,15 @@ void handle_message_arne182(UIState *s, Message * msg) {
 
     s->scene.pa0 = datad.pa0;
     s->scene.freeSpace = datad.freeSpace;
+  } else if (eventd.which == cereal_Event_arne182Status) {
+    struct cereal_Arne182Status datad;
+    cereal_read_Arne182Status(&datad, eventarne182d.arne182Status);
+    s->scene.leftblindspot = datad.leftblindspot;
+    s->scene.leftblindspotD1 = datad.leftblindspotD1;
+    s->scene.leftblindspotD2 = datad.leftblindspotD2;
+    s->scene.rightblindspot = datad.rightblindspot;
+    s->scene.rightblindspotD1 = datad.rightblindspotD1;
+    s->scene.rightblindspotD2 = datad.rightblindspotD2;
   }
   capn_free(&ctxarne182);
 }
