@@ -198,6 +198,16 @@ class Way:
     best_score = None
     for way in ways:
       way = Way(way, query_results)
+      # don't consider backward facing roads
+      angle=heading - math.atan2(way.way.nodes[0].lon-way.way.nodes[-1].lon,way.way.nodes[0].lat-way.way.nodes[-1].lat)*180/3.14159265358979 - 180
+      if angle < -180:
+        angle = angle + 360
+      if angle > 180:
+        angle = angle - 360
+      backwards = abs(angle) > 90
+      if backwards:
+        continue
+
       points = way.points_in_car_frame(lat, lon, heading, True)
 
       on_way = way.on_way(lat, lon, heading, points)
