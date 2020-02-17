@@ -105,6 +105,12 @@ typedef struct UIScene {
   bool speedlimitahead_valid;
   bool speedlimit_valid;
   bool map_valid;
+  bool rightblindspot;
+  float rightblindspotD1;
+  float rightblindspotD2;
+  bool leftblindspot;
+  float leftblindspotD1;
+  float leftblindspotD2;
 
   float curvature;
   int engaged;
