@@ -297,25 +297,35 @@ class CarState():
     if frame > 999:
       if cp.vl["DEBUG"]['BLINDSPOTSIDE']==65: #Left
         self.leftblindspotcounter = 21
-        if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD2'] > 10):
-          msg.arne182Status.leftBlindspot = bool(1)
-          msg.arne182Status.leftBlindspotD1 = cp.vl["DEBUG"]['BLINDSPOTD1']
-          msg.arne182Status.leftBlindspotD2 = cp.vl["DEBUG"]['BLINDSPOTD2']
+        self.leftblindspotD1 = cp.vl["DEBUG"]['BLINDSPOTD1']
+        self.leftblindspotD2 = cp.vl["DEBUG"]['BLINDSPOTD2']
+        if (self.leftblindspotD1 > 10) or (self.leftblindspotD2 > 10):
+          self.leftblindspot = bool(1)
           print("Left Blindspot Detected")
-        else:
-          msg.arne182Status.leftBlindspot = bool(0)
       elif  cp.vl["DEBUG"]['BLINDSPOTSIDE']==66: #Right
         self.rightblindspotcounter = 21
-        if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD2'] > 10):
-          msg.arne182Status.rightBlindspot = bool(1)
-          msg.arne182Status.rightBlindspotD1 = cp.vl["DEBUG"]['BLINDSPOTD1']
-          msg.arne182Status.rightBlindspotD2 = cp.vl["DEBUG"]['BLINDSPOTD2']
+        self.rightblindspotD1 = cp.vl["DEBUG"]['BLINDSPOTD1']
+        self.rightblindspotD2 = cp.vl["DEBUG"]['BLINDSPOTD2']
+        if (self.rightblindspotD1 > 10) or (self.rightblindspotD2 > 10):
+          self.rightblindspot = bool(1)
           print("Right Blindspot Detected")
-        else:
-          msg.arne182Status.rightBlindspot = bool(0)
       self.rightblindspotcounter = self.rightblindspotcounter -1 if self.rightblindspotcounter > 0 else 0
       self.leftblindspotcounter = self.leftblindspotcounter -1 if self.leftblindspotcounter > 0 else 0
-
+      if self.leftblindspotcounter == 0:
+        self.leftblindspot = False
+        self.leftblindspotD1 = 0
+        self.leftblindspotD2 = 0
+      if self.rightblindspotcounter == 0:
+        self.rightblindspot = False
+        self.rightblindspotD1 = 0
+        self.rightblindspotD2 = 0
+        
+    msg.arne182Status.leftBlindspot = self.leftblindspot
+    msg.arne182Status.rightBlindspot = self.rightblindspot
+    msg.arne182Status.rightBlindspotD1 = self.rightblindspotD1
+    msg.arne182Status.rightBlindspotD2 = self.rightblindspotD2
+    msg.arne182Status.leftBlindspotD1 = self.leftblindspotD1
+    msg.arne182Status.leftBlindspotD2 = self.leftblindspotD2
     msg.arne182Status.gasbuttonstatus = self.gasbuttonstatus
     if not travis:
       self.arne_pm.send('arne182Status', msg)
