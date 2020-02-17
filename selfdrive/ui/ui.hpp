@@ -128,7 +128,9 @@ typedef struct UIScene {
   float lead_d_rel, lead_y_rel, lead_v_rel;
 
   int front_box_x, front_box_y, front_box_width, front_box_height;
-
+  
+  bool recording;
+  
   uint64_t alert_ts;
   char alert_text1[1024];
   char alert_text2[1024];
