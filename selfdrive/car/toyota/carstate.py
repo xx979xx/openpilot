@@ -200,6 +200,14 @@ class CarState():
     self.v_cruise_pcmlast = 41.0
     self.setspeedoffset = 34.0
     self.setspeedcounter = 0
+    self.leftblindspot = False
+    self.leftblindspotD1 = 0
+    self.leftblindspotD2 = 0
+    self.rightblindspot = False
+    self.rightblindspotD1 = 0
+    self.rightblindspotD2 = 0
+    self.rightblindspotcounter = 0
+    self.leftblindspotcounter = 0
     self.Angles = np.zeros(250)
     #self.Angles_later = np.zeros(250)
     self.Angle_counter = 0
@@ -288,17 +296,25 @@ class CarState():
     msg.init('arne182Status')
     if frame > 999:
       if cp.vl["DEBUG"]['BLINDSPOTSIDE']==65: #Left
-        if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
+        self.leftblindspotcounter = 21
+        if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD2'] > 10):
           msg.arne182Status.leftBlindspot = bool(1)
+          msg.arne182Status.leftBlindspotD1 = cp.vl["DEBUG"]['BLINDSPOTD1']
+          msg.arne182Status.leftBlindspotD2 = cp.vl["DEBUG"]['BLINDSPOTD2']
           print("Left Blindspot Detected")
         else:
           msg.arne182Status.leftBlindspot = bool(0)
       elif  cp.vl["DEBUG"]['BLINDSPOTSIDE']==66: #Right
-        if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10):
+        self.rightblindspotcounter = 21
+        if (cp.vl["DEBUG"]['BLINDSPOTD1'] > 10) or (cp.vl["DEBUG"]['BLINDSPOTD2'] > 10):
           msg.arne182Status.rightBlindspot = bool(1)
+          msg.arne182Status.rightBlindspotD1 = cp.vl["DEBUG"]['BLINDSPOTD1']
+          msg.arne182Status.rightBlindspotD2 = cp.vl["DEBUG"]['BLINDSPOTD2']
           print("Right Blindspot Detected")
         else:
           msg.arne182Status.rightBlindspot = bool(0)
+      self.rightblindspotcounter = self.rightblindspotcounter -1 if self.rightblindspotcounter > 0 else 0
+      self.leftblindspotcounter = self.leftblindspotcounter -1 if self.leftblindspotcounter > 0 else 0
 
     msg.arne182Status.gasbuttonstatus = self.gasbuttonstatus
     if not travis:
