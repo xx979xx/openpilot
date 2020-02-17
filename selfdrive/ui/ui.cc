@@ -224,13 +224,6 @@ static void ui_init_vision(UIState *s, const VisionStreamBufs back_bufs,
   s->limit_set_speed_timeout = UI_FREQ;
 }
 
-struct tm get_time_struct() {
-  time_t t = time(NULL);
-  struct tm tm = *localtime(&t);
-  return tm;
-}
-
-
 
 static PathData read_path(cereal_ModelData_PathData_ptr pathp) {
   PathData ret = {0};
