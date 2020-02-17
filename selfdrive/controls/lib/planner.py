@@ -113,6 +113,7 @@ class Planner():
     self.a_cruise = 0.0
     self.v_model = 0.0
     self.a_model = 0.0
+    self.osm = True
 
     self.longitudinalPlanSource = 'cruise'
     self.fcw_checker = FCWChecker()
@@ -176,6 +177,7 @@ class Planner():
     if self.last_time > 5:
       if not travis:
         self.offset = int(self.params.get("SpeedLimitOffset", encoding='utf8'))
+        self.osm = self.params.get("LimitSetSpeed") == "1"
       self.last_time = 0
     self.last_time = self.last_time + 1
       
@@ -231,7 +233,7 @@ class Planner():
     v_speedlimit_ahead = NO_CURVATURE_SPEED
     now = datetime.now()
     try:
-      if sm['liveMapData'].speedLimitValid and osm and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
+      if sm['liveMapData'].speedLimitValid and osm and self.osm and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
         speed_limit = sm['liveMapData'].speedLimit
         if speed_limit is not None:
           # offset is in percentage,.
@@ -254,7 +256,7 @@ class Planner():
           speed_limit_ahead = sm['liveMapData'].speedLimitAhead
         if speed_limit_ahead is not None:
           v_speedlimit_ahead = speed_limit_ahead * (1. + self.offset/100.0)
-      if sm['liveMapData'].curvatureValid and osm and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
+      if sm['liveMapData'].curvatureValid and osm and self.osm and (sm['liveMapData'].lastGps.timestamp -time.mktime(now.timetuple()) * 1000) < 10000:
         curvature = abs(sm['liveMapData'].curvature)
         radius = 1/max(1e-4, curvature) * curvature_factor
         if gas_button_status == 1:
