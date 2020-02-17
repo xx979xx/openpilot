@@ -98,7 +98,11 @@ struct Arne182Status {
   readdistancelines @5 :Float32;
   gasbuttonstatus @6 :Float32;
   lkMode @7 :Bool;
-  leftBlindspot@8 :Bool;
+  leftBlindspot @8 :Bool;
+  rightBlindspotD1 @9 :Float32;
+  rightBlindspotD2 @10 :Float32;
+  leftBlindspotD1 @11 :Float32;
+  leftBlindspotD2 @12 :Float32;
   }
 
 struct LiveTrafficData {
