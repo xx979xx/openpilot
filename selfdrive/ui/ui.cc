@@ -548,7 +548,7 @@ void handle_message_arne182(UIState *s, Message * msg) {
 
     s->scene.pa0 = datad.pa0;
     s->scene.freeSpace = datad.freeSpace;
-  } else if (eventd.which == cereal_Event_arne182Status) {
+  } else if (event182d.which == cereal_EventArne182_arne182Status) {
     struct cereal_Arne182Status datad;
     cereal_read_Arne182Status(&datad, eventarne182d.arne182Status);
     s->scene.leftblindspot = datad.leftBlindspot;
