@@ -8,7 +8,7 @@ For a demo of this version of openpilot check the video below:
 [![demo of openpilot with this branch](https://img.youtube.com/vi/WKwSq8TPdpo/0.jpg)](https://www.youtube.com/playlist?list=PL3CGUyxys8DuTE1JTkdZwY93ejSfAGxyV)
 
 # Installation
-`cd /data/openpilot; rm -rf openpilot; git clone https://github.com/arne182/openpilot; cd openpilot; git checkout release4; reboot`
+`cd /data; rm -rf openpilot; git clone https://github.com/arne182/openpilot; cd openpilot; git checkout release4; reboot`
 
 ## Panda flashing
 
