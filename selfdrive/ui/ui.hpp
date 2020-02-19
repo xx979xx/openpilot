@@ -125,8 +125,10 @@ typedef struct UIScene {
   int ui_viz_ro;
 
   int lead_status;
+  int lead_status2;
   float lead_d_rel, lead_y_rel, lead_v_rel;
-
+  float lead_d_rel2, lead_y_rel2, lead_v_rel2;
+  
   int front_box_x, front_box_y, front_box_width, front_box_height;
   
    
