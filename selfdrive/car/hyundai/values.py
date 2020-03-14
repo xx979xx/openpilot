@@ -138,12 +138,12 @@ ECU_FINGERPRINT = {
 
 CHECKSUM = {
   "crc8": [CAR.SANTA_FE, CAR.SANTA_FE_1],
-  "6B": [CAR.KIA_SORENTO, CAR.GENESIS],
+  "6B": [CAR.KIA_SORENTO, CAR.GENESIS, CAR.KIA_SPORTAGE],
 }
 
 FEATURES = {
   "use_cluster_gears": [CAR.ELANTRA, CAR.KONA, CAR.ELANTRA_GT_I30],     # Use Cluster for Gear Selection, rather than Transmission
-  "use_tcu_gears": [CAR.KIA_OPTIMA],                                    # Use TCU Message for Gear Selection
+  "use_tcu_gears": [CAR.KIA_OPTIMA, CAR.KIA_SPORTAGE],                                    # Use TCU Message for Gear Selection
   "use_elect_gears": [CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV], # Use TCU Message for Gear Selection
 }
 
