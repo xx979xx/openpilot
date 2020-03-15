@@ -154,9 +154,9 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_SPORTAGE:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 3305. * CV.LB_TO_KG
+      ret.mass = 1499. + STD_CARGO_KG
       ret.wheelbase = 2.66
-      ret.steerRatio = 14.4 * 1.1   # 10% higher at the center seems reasonable
+      ret.steerRatio = 12.4 * 1.1   # 10% higher at the center seems reasonable
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
