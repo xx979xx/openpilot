@@ -255,7 +255,7 @@ class CarInterface(CarInterfaceBase):
     ret.cruiseState.standstill = False
 
     # Optima only has blinker flash signal
-    if self.CP.carFingerprint in [CAR.KIA_OPTIMA_H]:
+    if self.CP.carFingerprint in [CAR.KIA_SPORTAGE, CAR.KIA_OPTIMA_H]:
       self.CS.left_blinker_on = self.CS.left_blinker_flash or self.CS.prev_left_blinker_on and self.CC.turning_signal_timer
       self.CS.right_blinker_on = self.CS.right_blinker_flash or self.CS.prev_right_blinker_on and self.CC.turning_signal_timer
 
