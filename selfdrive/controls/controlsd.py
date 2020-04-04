@@ -233,14 +233,14 @@ def state_control(frame, rcv_frame, plan, path_plan, CS, CP, state, events, v_cr
 
   if CS.leftBlinker or CS.rightBlinker:
     last_blinker_frame = frame
+#주석처리 김남훈 
+  #if plan.fcw:
+  #  # send FCW alert if triggered by planner
+  #  AM.add(frame, "fcw", enabled)
 
-  if plan.fcw:
-    # send FCW alert if triggered by planner
-    AM.add(frame, "fcw", enabled)
-
-  elif CS.stockFcw:
-    # send a silent alert when stock fcw triggers, since the car is already beeping
-    AM.add(frame, "fcwStock", enabled)
+  #elif CS.stockFcw:
+  #  # send a silent alert when stock fcw triggers, since the car is already beeping
+  #  AM.add(frame, "fcwStock", enabled)
 
   # State specific actions
 
