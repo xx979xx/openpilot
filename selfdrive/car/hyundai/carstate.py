@@ -140,7 +140,8 @@ class CarState(CarStateBase):
     self.steer_warning = cp_mdps.vl["MDPS12"]['CF_Mdps_ToiUnavail']
     self.lead_distance = cp_scc.vl["SCC11"]['ACC_ObjDist'] if not self.no_radar else 0
     self.lkas_error = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] == 7
-    self.lkas_button_on = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] and not self.lkas_error
+    if not self.lkas_error:
+      self.lkas_button_on = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"]
     self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
 
