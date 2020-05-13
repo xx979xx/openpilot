@@ -39,13 +39,23 @@ To add new car or fingerprint, please make Pull Requset or send me the fingerpri
 
 | Make      | Model (US Market Reference)        | Supported Package | ACC              | No ACC accel below | No ALC below |
 | ----------| -----------------------------------| ------------------| -----------------| -------------------| -------------|
+| Genesis   | Genesis 2014~2016                  | All               | Stock            | 19mph              | 34mph        |
 | Genesis   | G80 2018                           | All               | Stock            | 0mph               | 0mph         |
 | Genesis   | G90 2018                           | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Grandeur IG 2018~2019              | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Grandeur_HEV IG 2018~2019          | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Palisade 2020                      | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Sonata 2017~2019                   | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Sonata_HEV 2017~2019               | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Sonata 2020                        | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Sonata_HEV 2020                    | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Elantra 2017-19<sup>5</sup>        | SCC + LKAS        | Stock            | 19mph              | 34mph        |
 | Hyundai   | Elantra GT/i30 2017-19             | All               | Stock            | 0mph               | 30mph        |
-| Hyundai   | Genesis 2018                       | All               | Stock            | 19mph              | 34mph        |
 | Hyundai   | Ioniq 2017<sup>5</sup>             | All               | Stock            | 0mph               | 34mph        |
+| Hyundai   | Ioniq_EV 2019~<sup>5</sup>         | SCC + LFA         | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona 2017-19<sup>5</sup>           | LDWS              | Stock            | 22mph              | 0mph         |
+| Hyundai   | Kona EV 2019~<sup>5</sup>          | SCC + LFA         | Stock            | 0mph               | 0mph         |
+| Hyundai   | Kona HEV 2019~<sup>5</sup>         | SCC + LFA         | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019<sup>5</sup>          | All               | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2018<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2019<sup>5</sup>             | LKAS              | Stock            | 0mph               | 0mph         |
