@@ -108,6 +108,20 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 12.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate in [CAR.SONATA20, CAR.SONATA20_HEV]:
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.mass = 1513. + STD_CARGO_KG
+      ret.wheelbase = 2.84
+      ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate == CAR.PALISADE:
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.mass = 1999. + STD_CARGO_KG
+      ret.wheelbase = 2.90
+      ret.steerRatio = 13.75 * 1.15
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.KIA_STINGER:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1825. + STD_CARGO_KG
