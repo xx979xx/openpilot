@@ -26,7 +26,12 @@ void uno_enable_can_transciever(uint8_t transciever, bool enabled) {
 
 void uno_enable_can_transcievers(bool enabled) {
   for(uint8_t i=1U; i<=4U; i++){
-    uno_enable_can_transciever(i, enabled);
+    // Leave main CAN always on for CAN-based ignition detection
+    if((car_harness_status == HARNESS_STATUS_FLIPPED) ? (i == 3U) : (i == 1U)){
+      uno_enable_can_transciever(i, true);
+    } else {
+      uno_enable_can_transciever(i, enabled);
+    }
   }
 }
 
@@ -110,6 +115,7 @@ void uno_set_esp_gps_mode(uint8_t mode) {
 }
 
 void uno_set_can_mode(uint8_t mode){
+  mode = CAN_MODE_OBD_CAN2;
   switch (mode) {
     case CAN_MODE_NORMAL:
     case CAN_MODE_OBD_CAN2:
