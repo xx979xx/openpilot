@@ -35,6 +35,15 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 1.
 
+    #Long tuning Params -  make individual params for cars, baseline Hyundai genesis
+    ret.longitudinalTuning.kpBP = [0., 5., 35.]
+    ret.longitudinalTuning.kpV = [1., .8, .5]
+    ret.longitudinalTuning.kiBP = [0., 35.]
+    ret.longitudinalTuning.kiV = [0.03, 0.02]
+    ret.longitudinalTuning.deadzoneBP = [0., 5.,  40.]
+    ret.longitudinalTuning.deadzoneV = [0.08, 0.12, 0.15]
+
+
     if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1694 + STD_CARGO_KG
@@ -87,7 +96,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
+
       ret.minSteerSpeed = 60 * CV.KPH_TO_MS # check for MDPS harness present
+
     elif candidate == CAR.GENESIS_G80:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
@@ -195,18 +206,6 @@ class CarInterface(CarInterfaceBase):
     # no rear steering, at least on the listed cars above
     ret.steerRatioRear = 0.
     ret.steerControlType = car.CarParams.SteerControlType.torque
-
-    #ret.longitudinalTuning.kpBP = [0.,  0.5,   5., 20., 40.]
-    #ret.longitudinalTuning.kpV = [0.2, 0.18, 0.12, 0.1, 0.06]
-    #ret.longitudinalTuning.kiBP = [0.]
-    #ret.longitudinalTuning.kiV = [0.002]
-    ret.longitudinalTuning.kpBP = [0., 5., 35.]
-    ret.longitudinalTuning.kpV = [2., 1.6, 1.]
-    ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.longitudinalTuning.kiV = [0.09, 0.06]
-    ret.longitudinalTuning.deadzoneBP = [0., 5.,  40.]
-    ret.longitudinalTuning.deadzoneV = [0.05, 0.08, 0.12]
-
 
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [0.]
