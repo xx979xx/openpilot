@@ -80,6 +80,8 @@ class CarController():
     self.turning_signal_timer = 0
     self.lkas_button_on = True
     self.longcontrol = CP.openpilotLongitudinalControl
+    self.fs_error = False
+    self.update_live = False
     self.scc_live = not CP.radarOffCan
     self.lead_visible = False
     self.lead_debounce = 0
@@ -144,6 +146,10 @@ class CarController():
 
     self.apply_accel_last = apply_accel
     self.apply_steer_last = apply_steer
+  
+    if self.update_live or (CS.lkas11["CF_Lkas_FusionState"] == 0):
+       self.fs_error = CS.lkas11["CF_Lkas_FusionState"]
+       self.update_live = True
 
     sys_warning, sys_state, left_lane_warning, right_lane_warning =\
       process_hud_alert(lkas_active, self.car_fingerprint, visual_alert,
@@ -185,12 +191,12 @@ class CarController():
     can_sends = []
     can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, lkas_active,
                                    CS.lkas11, sys_warning, sys_state, enabled, left_lane, right_lane,
-                                   left_lane_warning, right_lane_warning, 0))
+                                   left_lane_warning, right_lane_warning, self.fs_error, 0))
 
     if CS.mdps_bus or CS.scc_bus == 1: # send lkas11 bus 1 if mdps or scc is on bus 1
       can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, lkas_active,
                                    CS.lkas11, sys_warning, sys_state, enabled, left_lane, right_lane,
-                                   left_lane_warning, right_lane_warning, 1))
+                                   left_lane_warning, right_lane_warning, self.fs_error, 1))
     if frame % 2 and CS.mdps_bus: # send clu11 to mdps if it is not on bus 0
       can_sends.append(create_clu11(self.packer, frame, CS.mdps_bus, CS.clu11, Buttons.NONE, enabled_speed))
 
