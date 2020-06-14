@@ -38,10 +38,14 @@ class CarInterface(CarInterfaceBase):
     #Long tuning Params -  make individual params for cars, baseline Hyundai genesis
     ret.longitudinalTuning.kpBP = [0., 5., 35.]
     ret.longitudinalTuning.kpV = [1., .8, .5]
-    ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.longitudinalTuning.kiV = [0.03, 0.02]
+    ret.longitudinalTuning.kiBP = [0., 15., 35.]
+    ret.longitudinalTuning.kiV = [.06, .04, .04]
     ret.longitudinalTuning.deadzoneBP = [0., 5.,  40.]
     ret.longitudinalTuning.deadzoneV = [0.08, 0.12, 0.15]
+    ret.gasMaxBP = [0., 1., 5., 40]
+    ret.gasMaxV = [.2, .1, .2, .1] 
+    ret.brakeMaxBP = [0., 5., 5.1]
+    ret.brakeMaxV = [1., 1., 0.5]  # safety limits to stop unintended deceleration
 
 
     if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_1]:
@@ -210,10 +214,6 @@ class CarInterface(CarInterfaceBase):
     # steer, gas, brake limitations VS speed
     ret.steerMaxBP = [0.]
     ret.steerMaxV = [1.0]
-    ret.gasMaxBP = [0., 0.5]
-    ret.gasMaxV = [0.4, 0.5]
-    ret.brakeMaxBP = [0., 5., 5.1]
-    ret.brakeMaxV = [1., 1., 0.5]  # safety limits to stop unintended deceleration
 
     ret.enableCamera = is_ecu_disconnected(fingerprint[0], FINGERPRINTS, ECU_FINGERPRINT, candidate, Ecu.fwdCamera) or has_relay
 
