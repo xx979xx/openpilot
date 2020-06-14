@@ -11,11 +11,13 @@ STARTING_TARGET_SPEED = 0.5
 BRAKE_THRESHOLD_TO_PID = 0.2
 
 STOPPING_BRAKE_RATE = 0.2  # brake_travel/s while trying to stop
-STARTING_BRAKE_RATE = 0.8  # brake_travel/s while releasing on restart
-BRAKE_STOPPING_TARGET = 0.5  # apply at least this amount of brake to maintain the vehicle stationary
+STARTING_BRAKE_RATE = 0.6  # brake_travel/s while releasing on restart
 
-_MAX_SPEED_ERROR_BP = [0., 30.]  # speed breakpoints
-_MAX_SPEED_ERROR_V = [1.5, .8]  # max positive v_pid error VS actual speed; this avoids controls windup due to slow pedal resp
+BRAKE_STOPPING_TARGET_BP = [1.7, 1.2, .6, .4]
+BRAKE_STOPPING_TARGET_D = [1.25,  1., .9, .4]  # apply at least this amount of brake to maintain the vehicle stationary
+
+MAX_SPEED_ERROR_BP = [0., 5., 10.]  # speed breakpoints
+MAX_SPEED_ERROR_V = [.6, .5, .3]  # max positive v_pid error VS actual speed; this avoids controls windup due to slow pedal resp
 
 RATE = 100.0
 
@@ -76,6 +78,7 @@ class LongControl():
     # Actuation limits
     gas_max = interp(CS.vEgo, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(CS.vEgo, CP.brakeMaxBP, CP.brakeMaxV)
+    stop_decel = interp(CS.vEgo, BRAKE_STOPPING_TARGET_BP, BRAKE_STOPPING_TARGET_D)
 
     # Update state machine
     output_gb = self.last_output_gb
@@ -100,6 +103,11 @@ class LongControl():
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7
       deadzone = interp(v_ego_pid, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
+      accel_pos_error_max = interp((self.v_pid - v_ego_pid), MAX_SPEED_ERROR_BP, MAX_SPEED_ERROR_V)
+
+      # limit +ve set point to avoid i term windup during acceleration
+      if self.v_pid > (v_ego_pid + accel_pos_error_max):
+        self.v_pid = v_ego_pid + accel_pos_error_max
 
       output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=prevent_overshoot)
 

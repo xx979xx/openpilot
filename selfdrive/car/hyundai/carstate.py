@@ -49,7 +49,7 @@ class CarState(CarStateBase):
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
-    ret.standstill = ret.vEgoRaw < 0.1
+    ret.standstill = self.standstill = ret.vEgoRaw < 0.1
 
     ret.steeringAngle = cp_sas.vl["SAS11"]['SAS_Angle']
     ret.steeringRate = cp_sas.vl["SAS11"]['SAS_Speed']
@@ -89,7 +89,7 @@ class CarState(CarStateBase):
     ret.gas = cp.vl["EMS12"]['PV_AV_CAN'] / 100 if self.CP.carFingerprint not in FEATURES["use_elect_ems"] else \
                 cp.vl["E_EMS11"]['Accel_Pedal_Pos'] / 100
 
-    ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"]) if self.CP.carFingerprint not in FEATURES["use_elect_ems"] else \
+    ret.gasPressed = self.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"]) if self.CP.carFingerprint not in FEATURES["use_elect_ems"] else \
                 cp.vl["E_EMS11"]['Accel_Pedal_Pos'] > 5
 
     ret.espDisabled = cp.vl["TCS15"]['ESC_Off_Step'] != 0

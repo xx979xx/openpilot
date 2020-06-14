@@ -9,8 +9,8 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart, bus):
   values = lkas11
-  values["CF_Lkas_LdwsSysState"] = sys_state
-  values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
+  values["CF_Lkas_LdwsSysState"] = 3 if steer_req else sys_state
+  values["CF_Lkas_SysWarning"] = sys_warning
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
   values["CF_Lkas_LdwsRHWarning"] = right_lane_depart
   values["CR_Lkas_StrToqReq"] = apply_steer
@@ -56,13 +56,22 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
 def create_clu11(packer, frame, bus, clu11, button, speed):
   values = clu11
-  values["CF_Clu_CruiseSwState"] = button
+
+  if bus != 1: # not mdps
+    values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_Vanz"] = speed
   values["CF_Clu_AliveCnt1"] = frame // 2 % 0x10
   return packer.make_can_msg("CLU11", bus, values)
 
-def create_scc12(packer, apply_accel, enabled, cnt, scc_live, scc12):
+def create_scc12(packer, apply_accel, enabled, brake, gas, cnt, scc_live, scc12):
   values = scc12
+  if enabled and (not brake):
+    values["ACCMode"] = 1
+    if gas and (apply_accel >= 0):
+      values["ACCMode"] = 2
+  else:
+    values["ACCMode"] = 0
+
   values["aReqRaw"] = apply_accel if enabled else 0 #aReqMax
   values["aReqValue"] = apply_accel if enabled else 0 #aReqMin
   values["CR_VSM_Alive"] = cnt
@@ -107,14 +116,19 @@ def create_lfa_mfa(packer, frame, enabled):
 
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc_live, scc11):
+def create_scc11(packer, frame, enabled, set_speed, lead_visible, standstill, scc_live, scc11):
   values = scc11
+  
+  #values["MainMode_ACC"] = 1 # let radar handle this
   values["AliveCounterACC"] = frame // 2 % 0x10
   if not scc_live:
     values["MainMode_ACC"] = 1
+  if enabled: 
     values["VSetDis"] = set_speed
-    values["ObjValid"] = 1 if enabled else 0
-#  values["ACC_ObjStatus"] = lead_visible
+  values["SCCInfoDisplay"] = 4 if standstill  else 0 tie to long control state = stopping
+  values["DriverAlertDisplay"] = 0
+  values["ObjValid"] = lead_visible
+  values["ACC_ObjStatus"] = lead_visible
 
   return packer.make_can_msg("SCC11", 0, values)
 
