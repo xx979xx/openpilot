@@ -19,11 +19,11 @@ ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
 # actuator smoothness params
 DECEL_APPLY_RATE_BP = [0., .2, .8, 1.2, 1.5, 2.,  3., 5.,  11.]
-DECEL_APPLY_RATE_R = [.003, .006, .009, .010, .012, .002, .025, .10, .30]
+DECEL_APPLY_RATE_R = [.003, .006, .009, .015, .02, .025, .035, .10, .30]
 ACCEL_APPLY_RATE_BP = [0., 1.5]
-ACCEL_APPLY_RATE_R = [.015, .003]
-REL_RATE_BP = [0., 11.]
-REL_RATE_R = [.01, .05]
+ACCEL_APPLY_RATE_R = [.015, .01]
+REL_RATE_BP = [11., 0.]
+REL_RATE_R = [.05, .01]
 
 def accel_hysteresis(accel, accel_steady):
 
@@ -98,8 +98,8 @@ class CarController():
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
 
-    accel_apply_rate = interp(self.apply_accel_last, ACCEL_APPLY_RATE_BP, ACCEL_APPLY_RATE_R)
-    decel_apply_rate = interp(self.apply_accel_last, DECEL_APPLY_RATE_BP, DECEL_APPLY_RATE_R)
+    accel_apply_rate = interp(apply_accel, ACCEL_APPLY_RATE_BP, ACCEL_APPLY_RATE_R)
+    decel_apply_rate = interp(apply_accel, DECEL_APPLY_RATE_BP, DECEL_APPLY_RATE_R)
     rel_rate = interp(self.apply_accel_last, REL_RATE_BP, REL_RATE_R)
 
     if 0 >= apply_accel:
