@@ -63,9 +63,9 @@ def create_clu11(packer, frame, bus, clu11, button, speed):
   values["CF_Clu_AliveCnt1"] = frame // 2 % 0x10
   return packer.make_can_msg("CLU11", bus, values)
 
-def create_scc12(packer, apply_accel, enabled, brake, gas, cnt, scc_live, scc12):
+def create_scc12(packer, apply_accel, enabled, gas, cnt, scc_live, scc12):
   values = scc12
-  if enabled and (not brake):
+  if enabled:
     values["ACCMode"] = 1
     if gas and (apply_accel >= 0):
       values["ACCMode"] = 2
@@ -125,7 +125,7 @@ def create_scc11(packer, frame, enabled, set_speed, lead_visible, standstill, sc
     values["MainMode_ACC"] = 1
   if enabled: 
     values["VSetDis"] = set_speed
-  values["SCCInfoDisplay"] = 4 if standstill  else 0 tie to long control state = stopping
+  values["SCCInfoDisplay"] = 4 if standstill else 0 #tie to long control state = stopping
   values["DriverAlertDisplay"] = 0
   values["ObjValid"] = lead_visible
   values["ACC_ObjStatus"] = lead_visible
