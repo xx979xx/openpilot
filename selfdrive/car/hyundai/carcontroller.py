@@ -1,5 +1,5 @@
 from cereal import car
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa, \
                                              create_scc11, create_scc12, create_mdps12, \
@@ -12,10 +12,18 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 min_set_speed = 30 * CV.KPH_TO_MS
 
 # Accel limits
-ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
+ACCEL_HYST_GAP = 0.01  # don't change accel command for small oscilalitons within this value
 ACCEL_MAX = 1.5  # 1.5 m/s2
-ACCEL_MIN = -3.0 # 3   m/s2
+ACCEL_MIN = -10.0  # 10   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
+
+# actuator smoothness params
+DECEL_APPLY_RATE_BP = [0., .2, .8, 1.2, 1.5, 2.,  3., 5.,  11.]
+DECEL_APPLY_RATE_R = [.003, .006, .009, .010, .012, .002, .025, .10, .30]
+ACCEL_APPLY_RATE_BP = [0., 1.5]
+ACCEL_APPLY_RATE_R = [.015, .003]
+REL_RATE_BP = [0., 11.]
+REL_RATE_R = [.01, .05]
 
 def accel_hysteresis(accel, accel_steady):
 
@@ -32,10 +40,10 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
                       right_lane, left_lane_depart, right_lane_depart, button_on):
   sys_warning = (visual_alert == VisualAlert.steerRequired)
 
-  # initialize to no line visible
+  # initialize to no lane visible
   sys_state = 1
   if not button_on:
-    lane_visible = 0
+    sys_state = 0
   if left_lane and right_lane or sys_warning:  #HUD alert only display when LKAS status is active
     if enabled or sys_warning:
       sys_state = 3
@@ -73,6 +81,9 @@ class CarController():
     self.lkas_button_on = True
     self.longcontrol = CP.openpilotLongitudinalControl
     self.scc_live = not CP.radarOffCan
+    self.lead_visible = False
+    self.lead_debounce = 0
+    self.apply_accel_last = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart, set_speed, lead_visible):
@@ -84,6 +95,25 @@ class CarController():
 
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
+
+    accel_apply_rate = interp(self.apply_accel_last, ACCEL_APPLY_RATE_BP, ACCEL_APPLY_RATE_R)
+    decel_apply_rate = interp(self.apply_accel_last, DECEL_APPLY_RATE_BP, DECEL_APPLY_RATE_R)
+    rel_rate = interp(self.apply_accel_last, REL_RATE_BP, REL_RATE_R)
+
+    if 0 >= apply_accel:
+      if apply_accel > self.apply_accel_last:
+        if CS.gasPressed:
+          apply_accel = min(apply_accel, self.apply_accel_last + rel_rate)
+        else:
+          apply_accel = min(apply_accel, self.apply_accel_last + rel_rate)
+      else:
+        apply_accel = max(apply_accel, self.apply_accel_last - decel_apply_rate)
+    else:
+      if apply_accel > self.apply_accel_last:
+        apply_accel = min(apply_accel, self.apply_accel_last + accel_apply_rate)
+      else:
+        apply_accel = apply_accel
+
 
     # Steering Torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
@@ -169,10 +199,19 @@ class CarController():
     elif CS.mdps_bus: # send mdps12 to LKAS to prevent LKAS error if no cancel cmd
       can_sends.append(create_mdps12(self.packer, frame, CS.mdps12))
 
+    if lead_visible:
+      self.lead_visible = True
+      self.lead_debounce = 100
+    elif self.lead_debounce > 0:
+      self.lead_debounce -= 1
+    else:
+      self.lead_visible = lead_visible
+
     # send scc to car if longcontrol enabled and SCC not on bus 0 or ont live
     if self.longcontrol and (CS.scc_bus or not self.scc_live) and frame % 2 == 0: 
-      can_sends.append(create_scc12(self.packer, apply_accel, enabled, self.scc12_cnt, self.scc_live, CS.scc12))
-      can_sends.append(create_scc11(self.packer, frame, enabled, set_speed, lead_visible, self.scc_live, CS.scc11))
+      can_sends.append(create_scc12(self.packer, apply_accel, enabled, CS.brakePressed, CS.gasPressed, self.scc12_cnt, self.scc_live, CS.scc12))
+      can_sends.append(create_scc11(self.packer, frame, enabled, set_speed, self.lead_visible, CS.standstill, self.scc_live, CS.scc11))
+
       if CS.has_scc13 and frame % 20 == 0:
         can_sends.append(create_scc13(self.packer, CS.scc13))
       if CS.has_scc14:
