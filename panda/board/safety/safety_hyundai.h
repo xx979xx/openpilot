@@ -108,6 +108,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (hyundai_forward_bus1 || !hyundai_LCAN_on_bus1) {
       hyundai_LCAN_on_bus1 = true;
       hyundai_forward_bus1 = false;
+      puts("  LCAN on bus1: forwarding enabled"); puts("\n");
     }
   }
   // check if we have a MDPS on Bus1 and LCAN not on the bus
@@ -115,12 +116,14 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (hyundai_mdps_bus != bus || !hyundai_forward_bus1) {
       hyundai_mdps_bus = bus;
       hyundai_forward_bus1 = true;
+      puts("  MDPS on bus1: forwarding enabled"); puts("\n");
     }
   }
   // check if we have a SCC on Bus1 and LCAN not on the bus
   if (bus == 1 && addr == 1057 && !hyundai_LCAN_on_bus1) {
     if (!hyundai_forward_bus1) {
       hyundai_forward_bus1 = true;
+      puts("  SCC on bus1: forwarding enabled"); puts("\n");
     }
   }
 
@@ -135,16 +138,28 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (addr == 1057 && (bus != 1 || !hyundai_LCAN_on_bus1)) {
       hyundai_has_scc = true;
       car_SCC_live = 50;
-      int cruise_engaged;
-      if (OP_SCC_live) { // for cars with long control
-        cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3; // 2 bits: 13-14
-      } else if (!OP_SCC_live) { // for cars without long control
-        cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
-      }
+      // 2 bits: 13-14
+      int cruise_engaged = (GET_BYTES_04(to_push) >> 13) & 0x3;
       if (cruise_engaged && !cruise_engaged_prev) {
         controls_allowed = 1;
+        puts("  SCC w/ long control: controls allowed"); puts("\n");
       }
       if (!cruise_engaged) {
+        if (controls_allowed) {puts("  SCC w/ long control: controls not allowed"); puts("\n");}
+        controls_allowed = 0;
+      }
+      cruise_engaged_prev = cruise_engaged;
+    }
+    if (addr == 1056 && !OP_SCC_live && (bus != 1 || !hyundai_LCAN_on_bus1)) { // for cars without long control
+      hyundai_has_scc = true;
+      // 2 bits: 13-14
+      int cruise_engaged = GET_BYTES_04(to_push) & 0x1; // ACC main_on signal
+      if (cruise_engaged && !cruise_engaged_prev) {
+        controls_allowed = 1;
+        puts("  SCC w/o long control: controls allowed"); puts("\n");
+      }
+      if (!cruise_engaged) {
+        if (controls_allowed) {puts("  SCC w/o long control: controls not allowed"); puts("\n");}
         controls_allowed = 0;
       }
       cruise_engaged_prev = cruise_engaged;
@@ -156,8 +171,10 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       int cruise_engaged = (GET_BYTES_04(to_push) >> 25 & 0x1); // ACC main_on signal
       if (cruise_engaged && !cruise_engaged_prev) {
         controls_allowed = 1;
+        puts("  non-SCC w/ long control: controls allowed"); puts("\n");
       }
       if (!cruise_engaged) {
+        if (controls_allowed) {puts("  non-SCC w/ long control: controls not allowed"); puts("\n");}
         controls_allowed = 0;
       }
       cruise_engaged_prev = cruise_engaged;
@@ -169,9 +186,11 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       // enable on both accel and decel buttons falling edge
       if (!cruise_button && (cruise_engaged_prev == 1 || cruise_engaged_prev == 2)) {
         controls_allowed = 1;
+        puts("  non-SCC w/o long control: controls allowed"); puts("\n");
       }
       // disable on cancel rising edge
       if (cruise_button == 4) {
+        if (controls_allowed) {puts("  non-SCC w/o long control: controls not allowed"); puts("\n");}
         controls_allowed = 0;
       }
       cruise_engaged_prev = cruise_button;
@@ -180,6 +199,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (addr == 608 && OP_SCC_live && bus == 0) {
       bool gas_pressed = (GET_BYTE(to_push, 7) >> 6) != 0;
       if (!unsafe_allow_gas && gas_pressed && !gas_pressed_prev) {
+        if (controls_allowed) {puts("  gas press w/ long control: controls not allowed"); puts("\n");}
         controls_allowed = 0;
       }
       gas_pressed_prev = gas_pressed;
@@ -197,6 +217,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (addr == 916 && OP_SCC_live && bus == 0) {
       bool brake_pressed = (GET_BYTE(to_push, 6) >> 7) != 0;
       if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
+        if (controls_allowed) {puts("  brake press w/ long control: controls not allowed"); puts("\n");}
         controls_allowed = 0;
       }
       brake_pressed_prev = brake_pressed;
@@ -205,7 +226,10 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     // check if stock camera ECU is on bus 0
     if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && bus == 0 && addr == 832) {
       relay_malfunction_set();
+      puts("  LKAS on bus0 or relay malfunction"); puts("\n");
     }
+  } else {
+    puts("  CAN RX invalid: "); puth(addr); puts("\n");
   }
   return valid;
 }
@@ -218,10 +242,12 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 
   if (!msg_allowed(to_send, HYUNDAI_TX_MSGS, sizeof(HYUNDAI_TX_MSGS)/sizeof(HYUNDAI_TX_MSGS[0]))) {
     tx = 0;
+    puts("  CAN TX not allowed: "); puth(addr); puts(", "); puth(bus); puts("\n");
   }
 
   if (relay_malfunction) {
     tx = 0;
+    puts("  CAN TX not allowed LKAS on bus0"); puts("\n");
   }
 
   // LKA STEER: safety check
@@ -234,18 +260,24 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     if (controls_allowed) {
 
       // *** global torque limit check ***
-      violation |= max_limit_check(desired_torque, HYUNDAI_MAX_STEER, -HYUNDAI_MAX_STEER);
+      bool torque_check = 0;
+      violation |= torque_check = max_limit_check(desired_torque, HYUNDAI_MAX_STEER, -HYUNDAI_MAX_STEER);
+      if (torque_check) {puts("  LKAS TX not allowed: torque limit check failed!"); puts("\n");}
 
       // *** torque rate limit check ***
-      violation |= driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
+      bool torque_rate_check = 0;
+      violation |= torque_rate_check = driver_limit_check(desired_torque, desired_torque_last, &torque_driver,
         HYUNDAI_MAX_STEER, HYUNDAI_MAX_RATE_UP, HYUNDAI_MAX_RATE_DOWN,
         HYUNDAI_DRIVER_TORQUE_ALLOWANCE, HYUNDAI_DRIVER_TORQUE_FACTOR);
+      if (torque_rate_check) {puts("  LKAS TX not allowed: torque rate limit check failed!"); puts("\n");}
 
       // used next time
       desired_torque_last = desired_torque;
 
       // *** torque real time rate limit check ***
-      violation |= rt_rate_limit_check(desired_torque, rt_torque_last, HYUNDAI_MAX_RT_DELTA);
+      bool torque_rt_check = 0;
+      violation |= torque_rt_check = rt_rate_limit_check(desired_torque, rt_torque_last, HYUNDAI_MAX_RT_DELTA);
+      if (torque_rt_check) {puts("  LKAS TX not allowed: torque real time rate limit check failed!"); puts("\n");}
 
       // every RT_INTERVAL set the new limits
       uint32_t ts_elapsed = get_ts_elapsed(ts, ts_last);
@@ -258,6 +290,7 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     // no torque if controls is not allowed
     if (!controls_allowed && (desired_torque != 0)) {
       violation = 1;
+      puts("  LKAS TX not allowed: controls not allowed!"); puts("\n");
     }
 
     // reset to 0 if either controls is not allowed or there's a violation
@@ -281,10 +314,9 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
       tx = 0;
     }
   }
-
-  if (addr == 593) {OP_MDPS_live = 20;}
-  if (addr == 1265 && bus == 1) {OP_CLU_live = 20;} // only count mesage created for MDPS
-  if (addr == 1057) {OP_SCC_live = 20; if (car_SCC_live > 0) {car_SCC_live -= 1;}}
+  if (addr == 593) {if (OP_MDPS_live < 1) {puts("  OP Mdps live: forwarding to LKAS stopped"); puts("\n");} OP_MDPS_live = 20;}
+  if (addr == 1265 && bus == 1) {if (OP_CLU_live < 1) {puts("  OP Clu12 live: forwarding to Mdps stopped"); puts("\n");} OP_CLU_live = 20;} // only count mesage created for MDPS
+  if (addr == 1057) {if (OP_SCC_live < 1) {puts("  OP SCC live: forwarding to Car stopped"); puts("\n");} OP_SCC_live = 20; if (car_SCC_live > 0) {car_SCC_live -= 1;}}
 
   // 1 allows the message through
   return tx;
