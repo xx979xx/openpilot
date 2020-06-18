@@ -10,6 +10,7 @@ from selfdrive.car.hyundai.values import DBC
 def get_radar_can_parser(CP):
   signals = [
     # sig_name, sig_address, default
+    ("ObjValid", "SCC11", 0),
     ("ACC_ObjStatus", "SCC11", 0),
     ("ACC_ObjLatPos", "SCC11", 0),
     ("ACC_ObjDist", "SCC11", 0),
@@ -26,7 +27,7 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages = set()
     self.trigger_msg = 0x420
     self.track_id = 0
-    self.radar_off_can = CP.sccBus == -1
+    self.radar_off_can = CP.radarOffCan
 
   def update(self, can_strings):
     if self.radar_off_can:
@@ -39,7 +40,7 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:
-      return None
+      return car.RadarData.new_message()
 
     rr = self._update(self.updated_messages)
     self.updated_messages.clear()
