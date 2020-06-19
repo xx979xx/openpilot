@@ -92,6 +92,7 @@ def create_lfa_mfa(packer, frame, enabled):
   values = {
     "ACTIVE": enabled,
     "HDA_USM": 2,
+    "PASSIVE": 1 if not enabled else 0,
   }
 
   # ACTIVE 1 = Green steering wheel icon
