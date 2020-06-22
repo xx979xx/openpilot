@@ -109,9 +109,9 @@ class CarInterfaceBase():
       events.add(EventName.stockAeb)
     if cs_out.vEgo > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
-    if cs_out.brake_hold:
+    if cs_out.brakeHold:
       events.add(EventName.brakeHold)
-    if cs_out.park_brake:
+    if cs_out.parkBrake:
       events.add(EventName.parkBrake)
     #if cs_out.cruiseState.nonAdaptive:
     #  events.add(EventName.wrongCruiseMode)

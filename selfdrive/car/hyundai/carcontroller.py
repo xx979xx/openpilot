@@ -1,9 +1,10 @@
 from cereal import car
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa, \
                                              create_scc11, create_scc12, create_mdps12, \
                                              create_scc13, create_scc14
+from selfdrive.car.hyundai.interface import GearShifter
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
 from opendbc.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
@@ -16,6 +17,13 @@ ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons withi
 ACCEL_MAX = 3.  # 1.5 m/s2
 ACCEL_MIN = -8.  # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
+
+CONTROL1_BP = [0.15, 0.1, 0.08, 0.05, 0.0]
+CONTROL1_A = [0.5, 0.3, 0.25, 0.1, 0.1]
+CONTROL2_BP = [0.15, 0.1, 0.08, 0.05, 0.0]
+CONTROL2_A = [0.8, 0.5, 0.3, 0.3, 0.25]
+CONTROL3_BP = [0.15, 0.3]
+CONTROL3_A = [1.0, 2.0]
 
 def accel_hysteresis(accel, accel_steady):
 
@@ -80,6 +88,10 @@ class CarController():
     self.lead_visible = False
     self.lead_debounce = 0
     self.apply_accel_last = 0
+    self.spas_accel = 0
+    self.op_spas_brake_state = 0
+    self.op_spas_state = -1
+    self.phasecount = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart, set_speed, lead_visible):
@@ -133,7 +145,7 @@ class CarController():
 
     clu11_speed = CS.clu11["CF_Clu_Vanz"]
     enabled_speed = 38 if CS.is_set_speed_in_mph  else 60
-    if clu11_speed > enabled_speed or not lkas_active:
+    if clu11_speed > enabled_speed or not lkas_active or CS.out.gearShifter == GearShifter.reverse:
       enabled_speed = clu11_speed
 
     if CS.is_set_speed_in_mph:
@@ -191,10 +203,137 @@ class CarController():
 
     self.acc_standstill = True if (LongCtrlState.stopping and CS.out.standstill) else False
 
+    self.prev_spas_accel = self.spas_accel
+
+    # todo add all parking type enumeration below
+    # reverse parking left - 18
+    # parallel parking right - 19
+    # parking exit left - 40
+    if CS.spas_on:
+      self.op_spas_state = 0  # SPAS enabled
+      print('SPAS ON = ', self.op_spas_state == 0)
+
+    if self.op_spas_state == 0 and \
+       ((CS.prev_spas_hmi_state != 18 and CS.spas_hmi_state == 18) or
+       (CS.prev_spas_hmi_state != 19 and CS.spas_hmi_state == 19)):
+    #   (CS.prev_spas_hmi_state != 40 and CS.spas_hmi_state == 40)):
+      self.op_spas_state = 1  # space found
+      self.op_spas_brake_state = 13
+      self.phasecount = 0
+      print('SPACE FOUND')
+      print('Phase = 0')
+      print('XXX################%%####################')
+      print('XXXX###########%%%%%%##################')
+      print('XXX#############%%####################')
+
+    if self.op_spas_state == 1 and CS.prev_spas_hmi_state != CS.spas_hmi_state and CS.spas_hmi_state == 23:
+      self.op_spas_state = 2  # move in Reverse after space found
+      self.op_spas_brake_state = 11
+      self.phasecount = 1
+      print('1st Phase Movement')
+      print('Phase = 1')
+      print('################%%####################')
+      print('##############%%%%%%##################')
+      print('################%%####################')
+    elif self.op_spas_state == 2 and CS.prev_spas_hmi_state == 23 and CS.spas_hmi_state == 25 \
+          and not CS.out.gearShifter == GearShifter.drive:
+      self.op_spas_brake_state = 13  # shift to Drive
+      self.phasecount = 1
+      print('Brake for Phase 1')
+      print('####!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!####')
+      print('###########!!!%%%%%%!!!###############')
+      print('###############!%%!###################')
+    elif self.op_spas_state == 2 and CS.spas_hmi_state == 25 \
+           and CS.out.gearShifter == GearShifter.drive:
+      self.op_spas_state = 3   # move in Drive
+      self.op_spas_brake_state = 11
+      self.phasecount = 2
+      print('Phase = 2, Drive')
+      print('################%%####################')
+      print('##############%%%%%%##################')
+      print('################%%####################')
+    elif self.op_spas_state > 2 and CS.prev_spas_hmi_state == 25 and CS.spas_hmi_state == 26 \
+          and not CS.out.gearShifter == GearShifter.reverse:
+      self.op_spas_brake_state = 13  # shift to Reverse
+      print('Brake for Phase =', self.phasecount)
+      print('####!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!####')
+      print('###########!!!%%%%%%!!!###############')
+      print('###############!%%!###################')
+    elif self.op_spas_state > 2 and CS.spas_hmi_state == 26 \
+           and CS.out.gearShifter == GearShifter.reverse:
+      self.op_spas_state = 4  # move to Reverse
+      self.op_spas_brake_state = 11
+      self.phasecount += 1
+      print('Reverse, Phase = ', self.phasecount)
+      print('################%%####################')
+      print('##############%%%%%%##################')
+      print('################%%####################')
+    elif self.op_spas_state > 2 and CS.prev_spas_hmi_state == 26 and CS.spas_hmi_state == 25 \
+          and not CS.out.gearShifter == GearShifter.drive:
+      self.op_spas_brake_state = 13  # shift to Drive
+      print('Brake for Phase =', self.phasecount)
+      print('####!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!####')
+      print('###########!!!%%%%%%!!!###############')
+      print('###############!%%!###################')
+    elif self.op_spas_state > 2 and CS.spas_hmi_state == 25 \
+           and CS.out.gearShifter == GearShifter.drive:
+      self.op_spas_state = 5   # move in Drive
+      self.op_spas_brake_state = 11
+      self.phasecount += 1
+      print('Drive, Phase = ', self.phasecount)
+      print('################%%####################')
+      print('##############%%%%%%##################')
+      print('################%%####################')
+
+    if CS.out.gearShifter == GearShifter.drive:
+      if CS.front_sensor_state > 2 and self.op_spas_brake_state < 13:
+        self.op_spas_brake_state = 13
+        print('Brake for Front Sensor =', CS.front_sensor_state)
+        print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
+        print('***#######$$$##!!!%%%%%%!!!##$$$###########*****************')
+        print('@@@@@###############!%%!###################@@@@@@@@@@@@@@@@@')
+      elif CS.front_sensor_state == 2 and self.op_spas_brake_state == 11:
+        self.op_spas_brake_state = 12
+        print('Brake for Front Sensor =', CS.front_sensor_state)
+        print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
+        print('***#######$$$##!!!%%%%%%!!!##$$$###########*****************')
+        print('@@@@@###############!%%!###################@@@@@@@@@@@@@@@@@')
+
+    if CS.out.gearShifter == GearShifter.reverse:
+      if CS.rear_sensor_state > 2 and self.op_spas_brake_state < 13:
+        self.op_spas_brake_state = 13
+        print('Brake for Front Sensor =', CS.rear_sensor_state)
+        print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
+        print('***#######$$$##!!!%%%%%%!!!##$$$###########*****************')
+        print('@@@@@###############!%%!###################@@@@@@@@@@@@@@@@@')
+      elif CS.rear_sensor_state == 2 and self.op_spas_brake_state == 11:
+        self.op_spas_brake_state = 12
+        print('Brake for Front Sensor =', CS.rear_sensor_state)
+        print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
+        print('***#######$$$##!!!%%%%%%!!!##$$$###########*****************')
+        print('@@@@@###############!%%!###################@@@@@@@@@@@@@@@@@')
+
+    if self.op_spas_brake_state == 13:
+      self.spas_accel = -interp(CS.out.vEgo, CONTROL3_BP, CONTROL3_A)
+    elif self.op_spas_brake_state == 12:
+      self.spas_accel = -interp((CS.out.vEgo - 0.25), CONTROL2_BP, CONTROL2_A)
+    elif self.op_spas_brake_state == 11:
+      self.spas_accel = -interp((CS.out.vEgo - 0.4), CONTROL1_BP, CONTROL1_A)
+
+    if not CS.spas_on or CS.out.vEgo > 2. or CS.out.gearShifter == GearShifter.park:
+      self.op_spas_state = -1  # no control
+      self.op_spas_brake_state = 0
+      self.spas_accel = 0
+      self.prev_spas_accel = 0
+
+    if self.spas_accel > self.prev_spas_accel:
+      self.spas_accel = self.prev_spas_accel + 0.01
+
     # send scc to car if longcontrol enabled and SCC not on bus 0 or ont live
     if self.longcontrol and (CS.scc_bus or not self.scc_live) and frame % 2 == 0: 
       can_sends.append(create_scc12(self.packer, apply_accel, enabled,
                                     self.acc_standstill, self.acc_paused,
+                                    self.op_spas_brake_state, self.spas_accel,
                                     self.scc12_cnt, CS.scc12))
 
       can_sends.append(create_scc11(self.packer, frame, enabled,

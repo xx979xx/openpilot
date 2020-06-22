@@ -26,7 +26,8 @@ class CarState(CarStateBase):
     self.prev_cruiseStateavailable = 0
     self.cruise_buttons = 0
     self.prev_cruise_buttons = 0
-    self.avhActive = False
+    self.spas_hmi_state = 0
+    self.prev_spas_hmi_state = 0
 
   def update(self, cp, cp2, cp_cam):
     cp_mdps = cp2 if self.mdps_bus else cp
@@ -72,11 +73,11 @@ class CarState(CarStateBase):
 
     # if no lead then allow AVH and wait for gas press to disable AVH
     if (cp.vl["ESP11"]['AVH_STAT'] == 1) and (cp_scc.vl["SCC11"]['ACC_ObjStatus'] == 0):
-      self.avhActive = True
+      ret.brakeHold = True
     elif ret.gasPressed or ret.vEgo > 0.3:
-      self.avhActive = False
+      ret.brakeHold = False
 
-    ret.brakeHold = self.avhActive
+   
 
     self.cruise_main_button = int(cp.vl["CLU11"]["CF_Clu_CruiseSwMain"])
     self.cruise_buttons = int(cp.vl["CLU11"]["CF_Clu_CruiseSwState"])
@@ -175,13 +176,23 @@ class CarState(CarStateBase):
     ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
     ret.rightBlindspot = cp.vl["LCA11"]["CF_Lca_IndRight"] != 0
 
+    self.prev_spas_hmi_state = self.spas_hmi_state
+    self.spas_hmi_state = cp_cam.vl["SPAS12"]["CF_Spas_HMI_Stat"]
+    self.spas_on = cp_cam.vl["SPAS12"]["CF_Spas_Disp"]
+
+    self.front_sensor_state = max(cp_cam.vl["SPAS12"]["CF_Spas_FIL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FIR_Ind"],
+                                  cp_cam.vl["SPAS12"]["CF_Spas_FOL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FOR_Ind"])
+
+    self.rear_sensor_state = max(cp_cam.vl["SPAS12"]["CF_Spas_FIL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FIR_Ind"],
+                                  cp_cam.vl["SPAS12"]["CF_Spas_FOL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FOR_Ind"])
+
     # save the entire LKAS11, CLU11, SCC12 and MDPS12
     self.lkas11 = cp_cam.vl["LKAS11"]
     self.clu11 = cp.vl["CLU11"]
     self.scc11 = cp_scc.vl["SCC11"]
     self.scc12 = cp_scc.vl["SCC12"]
     self.mdps12 = cp_mdps.vl["MDPS12"]
-    ret.parkBrake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
+    self.parkBrake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.steer_state = cp_mdps.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     ret.leadDistance = self.lead_distance = cp_scc.vl["SCC11"]['ACC_ObjDist'] if not self.no_radar else 0
     self.lkas_error = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] == 7
@@ -490,7 +501,20 @@ class CarState(CarStateBase):
       ("CF_Lkas_MsgCount", "LKAS11", 0),
       ("CF_Lkas_FusionState", "LKAS11", 0),
       ("CF_Lkas_FcwOpt_USM", "LKAS11", 0),
-      ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
+      ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0),
+
+      ("CF_Spas_HMI_Stat", "SPAS12", 0),
+      ("CF_Spas_Disp", "SPAS12", 0),
+
+      ("CF_Spas_FIL_Ind", "SPAS12", 0),
+      ("CF_Spas_FIR_Ind", "SPAS12", 0),
+      ("CF_Spas_FOL_Ind", "SPAS12", 0),
+      ("CF_Spas_FOR_Ind", "SPAS12", 0),
+
+      ("CF_Spas_RIL_Ind", "SPAS12", 0),
+      ("CF_Spas_RIR_Ind", "SPAS12", 0),
+      ("CF_Spas_ROL_Ind", "SPAS12", 0),
+      ("CF_Spas_ROR_Ind", "SPAS12", 0)
     ]
 
     checks = []
