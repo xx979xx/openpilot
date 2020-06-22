@@ -18,11 +18,11 @@ ACCEL_MAX = 3.  # 1.5 m/s2
 ACCEL_MIN = -8.  # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
-CONTROL1_BP = [0.15, 0.1, 0.08, 0.05, 0.0]
-CONTROL1_A = [0.2, 0.2, 0.22, 0.1, 0.0]
-CONTROL2_BP = [0.15, 0.1, 0.08, 0.05, 0.0]
-CONTROL2_A = [0.8, 0.5, 0.3, 0.3, 0.0]
-CONTROL3_BP = [0.15, 0.3]
+CONTROL1_BP = [0.1, 0.0]
+CONTROL1_A = [0.5, 0.0]
+CONTROL2_BP = [0.05, -0.02]
+CONTROL2_A = [0.7, 0.0]
+CONTROL3_BP = [0.0, 0.3]
 CONTROL3_A = [1.0, 2.0]
 
 def accel_hysteresis(accel, accel_steady):
@@ -262,13 +262,14 @@ class CarController():
       print('###############!%%!###################')
     elif self.op_spas_state > 2 and CS.spas_hmi_state == 26 \
            and CS.out.gearShifter == GearShifter.reverse:
+      if self.op_spas_state != 4:
+        self.phasecount += 1
+        print('Reverse, Phase = ', self.phasecount)
+        print('################%%####################')
+        print('##############%%%%%%##################')
+        print('################%%####################')
       self.op_spas_state = 4  # move to Reverse
       self.op_spas_brake_state = 10
-      self.phasecount += 1
-      print('Reverse, Phase = ', self.phasecount)
-      print('################%%####################')
-      print('##############%%%%%%##################')
-      print('################%%####################')
     elif self.op_spas_state > 2 and CS.prev_spas_hmi_state == 26 and CS.spas_hmi_state == 25 \
           and not CS.out.gearShifter == GearShifter.drive:
       self.op_spas_brake_state = 13  # shift to Drive
@@ -278,13 +279,14 @@ class CarController():
       print('###############!%%!###################')
     elif self.op_spas_state > 2 and CS.spas_hmi_state == 25 \
            and CS.out.gearShifter == GearShifter.drive:
-      self.op_spas_state = 5   # move in Drive
+      if self.op_spas_state != 5:
+        self.phasecount += 1
+        print('Drive, Phase = ', self.phasecount)
+        print('################%%####################')
+        print('##############%%%%%%##################')
+        print('################%%####################')
+      self.op_spas_state = 5  # move in Drive
       self.op_spas_brake_state = 10
-      self.phasecount += 1
-      print('Drive, Phase = ', self.phasecount)
-      print('################%%####################')
-      print('##############%%%%%%##################')
-      print('################%%####################')
 
     if CS.out.gearShifter == GearShifter.drive:
       if CS.front_sensor_state > 2 and self.op_spas_brake_state < 13:
@@ -293,13 +295,13 @@ class CarController():
         print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
         print('***#######$$$##!!!%%%%%%!!!##$$$###########*****************')
         print('@@@@@###############!%%!###################@@@@@@@@@@@@@@@@@')
-      elif CS.front_sensor_state == 2 and self.op_spas_brake_state == 11:
+      elif CS.front_sensor_state == 2 and self.op_spas_brake_state < 12:
         self.op_spas_brake_state = 12
         print('Brake for Front Sensor =', CS.front_sensor_state)
         print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
         print('***#######$$$##!!!%%%%%%!!!##$$$###########*****************')
         print('@@@@@###############!%%!###################@@@@@@@@@@@@@@@@@')
-      elif CS.front_sensor_state == 1 and self.op_spas_brake_state == 10:
+      elif (CS.out.vEgo > 0.11) or (CS.front_sensor_state == 1 and self.op_spas_brake_state < 11):
         self.op_spas_brake_state = 11
         print('Brake for Front Sensor =', CS.front_sensor_state)
         print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
@@ -313,13 +315,13 @@ class CarController():
         print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
         print('***#######$$$##!!!%%%%%%!!!##$$$###########*****************')
         print('@@@@@###############!%%!###################@@@@@@@@@@@@@@@@@')
-      elif CS.rear_sensor_state == 2 and self.op_spas_brake_state == 11:
+      elif CS.rear_sensor_state == 2 and self.op_spas_brake_state < 12:
         self.op_spas_brake_state = 12
         print('Brake for Front Sensor =', CS.rear_sensor_state)
         print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
         print('***#######$$$##!!!%%%%%%!!!##$$$###########*****************')
         print('@@@@@###############!%%!###################@@@@@@@@@@@@@@@@@')
-      elif CS.rear_sensor_state == 1 and self.op_spas_brake_state == 10:
+      elif (CS.out.vEgo > 0.11) or (CS.rear_sensor_state == 1 and self.op_spas_brake_state < 11):
         self.op_spas_brake_state = 11
         print('Brake for Front Sensor =', CS.rear_sensor_state)
         print('##$$$$$$$$$$$##!!!!!!!!!!!!%%!!!!!!!!!!!!!!!!##$$$$$$$$$$$##')
@@ -329,9 +331,9 @@ class CarController():
     if self.op_spas_brake_state == 13:
       self.spas_accel = -interp(CS.out.vEgo, CONTROL3_BP, CONTROL3_A)
     elif self.op_spas_brake_state == 12:
-      self.spas_accel = -interp((CS.out.vEgo - 0.25), CONTROL2_BP, CONTROL2_A)
+      self.spas_accel = -interp((CS.out.vEgo - 0.11), CONTROL2_BP, CONTROL2_A)
     elif self.op_spas_brake_state == 11:
-      self.spas_accel = -interp((CS.out.vEgo - 0.4), CONTROL1_BP, CONTROL1_A)
+      self.spas_accel = -interp((CS.out.vEgo - 0.28), CONTROL1_BP, CONTROL1_A)
     else:
       self.spas_accel = 0.
 
