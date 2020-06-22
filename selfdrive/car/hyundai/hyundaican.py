@@ -77,7 +77,7 @@ def create_scc12(packer, apply_accel, enabled, standstill, accpause, spasstate, 
   if enabled:
     values["aReqRaw"] = apply_accel
     values["aReqValue"] = apply_accel
-  if spasstate > -1:
+  elif spasstate > 0:
     values["aReqRaw"] = spasaccel
     values["aReqValue"] = spasaccel
   else:

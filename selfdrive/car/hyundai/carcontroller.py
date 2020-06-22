@@ -18,8 +18,8 @@ ACCEL_MAX = 3.  # 1.5 m/s2
 ACCEL_MIN = -8.  # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
-CONTROL1_BP = [0.15, 0.1, 0.08, 0.05, 0.0]
-CONTROL1_A = [0.5, 0.3, 0.25, 0.1, 0.1]
+CONTROL1_BP = [0.15, 0.1, 0.08, 0.05, 0.]
+CONTROL1_A = [0.2, 0.2, 0.22, 0.1, 0.]
 CONTROL2_BP = [0.15, 0.1, 0.08, 0.05, 0.0]
 CONTROL2_A = [0.8, 0.5, 0.3, 0.3, 0.25]
 CONTROL3_BP = [0.15, 0.3]
@@ -210,15 +210,16 @@ class CarController():
     # parallel parking right - 19
     # parking exit left - 40
     if CS.spas_on:
+      if (self.op_spas_state == -1)
+        print('SPAS ON = ')
       self.op_spas_state = 0  # SPAS enabled
-      print('SPAS ON = ', self.op_spas_state == 0)
 
     if self.op_spas_state == 0 and \
        ((CS.prev_spas_hmi_state != 18 and CS.spas_hmi_state == 18) or
        (CS.prev_spas_hmi_state != 19 and CS.spas_hmi_state == 19)):
     #   (CS.prev_spas_hmi_state != 40 and CS.spas_hmi_state == 40)):
       self.op_spas_state = 1  # space found
-      self.op_spas_brake_state = 13
+      self.op_spas_brake_state = 12
       self.phasecount = 0
       print('SPACE FOUND')
       print('Phase = 0')
@@ -324,10 +325,10 @@ class CarController():
       self.op_spas_state = -1  # no control
       self.op_spas_brake_state = 0
       self.spas_accel = 0
-      self.prev_spas_accel = 0
+      self.prev_spas_accel  = 0
 
     if self.spas_accel > self.prev_spas_accel:
-      self.spas_accel = self.prev_spas_accel + 0.01
+      self.spas_accel = self.prev_spas_accel + 0.03
 
     # send scc to car if longcontrol enabled and SCC not on bus 0 or ont live
     if self.longcontrol and (CS.scc_bus or not self.scc_live) and frame % 2 == 0: 
@@ -340,11 +341,11 @@ class CarController():
                                     set_speed, self.lead_visible,
                                     CS.out.standstill, CS.scc11))
 
-      if CS.has_scc13 and frame % 20 == 0:
-        can_sends.append(create_scc13(self.packer, CS.scc13))
-      if CS.has_scc14:
-        can_sends.append(create_scc14(self.packer, enabled, CS.scc14))
-      self.scc12_cnt += 1
+      #if CS.has_scc13 and frame % 20 == 0:
+      #  can_sends.append(create_scc13(self.packer, CS.scc13))
+      #if CS.has_scc14:
+      #  can_sends.append(create_scc14(self.packer, enabled, CS.scc14))
+      #self.scc12_cnt += 1
 
     if CS.out.cruiseState.standstill and not self.longcontrol:
       # run only first time when the car stopped
