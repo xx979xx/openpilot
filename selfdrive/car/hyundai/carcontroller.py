@@ -210,7 +210,7 @@ class CarController():
     # parallel parking right - 19
     # parking exit left - 40
     if CS.spas_on:
-      if (self.op_spas_state == -1)
+      if (self.op_spas_state == -1):
         print('SPAS ON = ')
       self.op_spas_state = 0  # SPAS enabled
 
