@@ -26,6 +26,7 @@ class CarState(CarStateBase):
     self.prev_cruiseStateavailable = 0
     self.cruise_buttons = 0
     self.prev_cruise_buttons = 0
+    self.avhActive = False
 
   def update(self, cp, cp2, cp_cam):
     cp_mdps = cp2 if self.mdps_bus else cp
@@ -67,7 +68,15 @@ class CarState(CarStateBase):
     # TODO: Find brake pressure
     ret.brake = 0
     ret.brakePressed = cp.vl["TCS13"]['DriverBraking'] != 0
-    self.brakesUnavailable = cp.vl["TCS13"]['ACCEnable'] == 3
+    ret.brakeUnavailable = cp.vl["TCS13"]['ACCEnable'] == 3
+
+    # if no lead then allow AVH and wait for gas press to disable AVH
+    if (cp.vl["ESP11"]['AVH_STAT'] == 1) and (cp_scc.vl["SCC11"]['ACC_ObjStatus'] == 0):
+      self.avhActive = True
+    elif ret.gasPressed or ret.vEgo > 0.3:
+      self.avhActive = False
+
+    ret.brakeHold = self.avhActive
 
     self.cruise_main_button = int(cp.vl["CLU11"]["CF_Clu_CruiseSwMain"])
     self.cruise_buttons = int(cp.vl["CLU11"]["CF_Clu_CruiseSwState"])
@@ -109,7 +118,7 @@ class CarState(CarStateBase):
     ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"]) if self.CP.carFingerprint not in FEATURES["use_elect_ems"] else \
                 cp.vl["E_EMS11"]['Accel_Pedal_Pos'] > 5
 
-    ret.espDisabled = self.brakesUnavailable or (cp.vl["TCS15"]['ESC_Off_Step'] != 0)
+    ret.espDisabled = (cp.vl["TCS15"]['ESC_Off_Step'] != 0)
 
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection, as this seems to be standard over all cars, but is not the preferred method.
     if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
@@ -172,7 +181,7 @@ class CarState(CarStateBase):
     self.scc11 = cp_scc.vl["SCC11"]
     self.scc12 = cp_scc.vl["SCC12"]
     self.mdps12 = cp_mdps.vl["MDPS12"]
-    self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
+    ret.parkBrake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
     self.steer_state = cp_mdps.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     ret.leadDistance = self.lead_distance = cp_scc.vl["SCC11"]['ACC_ObjDist'] if not self.no_radar else 0
     self.lkas_error = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] == 7
@@ -213,6 +222,8 @@ class CarState(CarStateBase):
       ("CF_Gway_ParkBrakeSw", "CGW1", 0),   # Parking Brake
 
       ("CYL_PRES", "ESP12", 0),
+
+      ("AVH_STAT", "ESP11", 0),
 
       ("CF_Clu_CruiseSwState", "CLU11", 0),
       ("CF_Clu_CruiseSwMain", "CLU11", 0),

@@ -93,20 +93,26 @@ class CarInterfaceBase():
     #  events.add(EventName.seatbeltNotLatched)
     #if cs_out.gearShifter != GearShifter.drive and cs_out.gearShifter not in extra_gears:
     #  events.add(EventName.wrongGear)
-    #if cs_out.gearShifter == GearShifter.reverse:
-    #  events.add(EventName.reverseGear)
+    if cs_out.gearShifter == GearShifter.reverse:
+      events.add(EventName.reverseGear)
     if not cs_out.cruiseState.available:
       events.add(EventName.wrongCarMode)
     if cs_out.espDisabled:
       events.add(EventName.espDisabled)
     #if cs_out.gasPressed:
     #  events.add(EventName.gasPressed)
+    if cs_out.brakeUnavailable:
+      events.add(EventName.brakeUnavailable)
     if cs_out.stockFcw:
       events.add(EventName.stockFcw)
     if cs_out.stockAeb:
       events.add(EventName.stockAeb)
     if cs_out.vEgo > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
+    if cs_out.brake_hold:
+      events.add(EventName.brakeHold)
+    if cs_out.park_brake:
+      events.add(EventName.parkBrake)
     #if cs_out.cruiseState.nonAdaptive:
     #  events.add(EventName.wrongCruiseMode)
 

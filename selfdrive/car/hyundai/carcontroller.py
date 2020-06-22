@@ -7,6 +7,7 @@ from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
 from opendbc.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.longcontrol import LongCtrlState
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -186,11 +187,19 @@ class CarController():
     else:
       self.lead_visible = lead_visible
 
+    self.acc_paused = True if (CS.out.brakePressed or CS.out.gasPressed or CS.out.brakeHold) else False
+
+    self.acc_standstill = True if (LongCtrlState.stopping and CS.out.standstill) else False
 
     # send scc to car if longcontrol enabled and SCC not on bus 0 or ont live
     if self.longcontrol and (CS.scc_bus or not self.scc_live) and frame % 2 == 0: 
-      can_sends.append(create_scc12(self.packer, apply_accel, enabled, CS.out.brakePressed, CS.out.gasPressed, CS.out.standstill, self.scc12_cnt, CS.scc12))
-      can_sends.append(create_scc11(self.packer, frame, enabled, set_speed, self.lead_visible, CS.out.standstill, CS.scc11))
+      can_sends.append(create_scc12(self.packer, apply_accel, enabled,
+                                    self.acc_standstill, self.acc_paused,
+                                    self.scc12_cnt, CS.scc12))
+
+      can_sends.append(create_scc11(self.packer, frame, enabled,
+                                    set_speed, self.lead_visible,
+                                    CS.out.standstill, CS.scc11))
 
       if CS.has_scc13 and frame % 20 == 0:
         can_sends.append(create_scc13(self.packer, CS.scc13))
