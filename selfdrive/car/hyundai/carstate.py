@@ -28,6 +28,8 @@ class CarState(CarStateBase):
     self.prev_cruise_buttons = 0
     self.spas_hmi_state = 0
     self.prev_spas_hmi_state = 0
+    self.front_sensor_stat = 0
+    self.rear_sensor_stat = 0
 
   def update(self, cp, cp2, cp_cam):
     cp_mdps = cp2 if self.mdps_bus else cp
@@ -180,9 +182,10 @@ class CarState(CarStateBase):
     self.spas_hmi_state = cp_cam.vl["SPAS12"]["CF_Spas_HMI_Stat"]
     self.spas_on = cp_cam.vl["SPAS12"]["CF_Spas_Disp"] > 0
 
+    self.prev_front_sensor_state = self.front_sensor_state
     self.front_sensor_state = max(cp_cam.vl["SPAS12"]["CF_Spas_FIL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FIR_Ind"],
                                   cp_cam.vl["SPAS12"]["CF_Spas_FOL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FOR_Ind"])
-
+    self.prev_rear_sensor_state = self.rear_sensor_stat
     self.rear_sensor_state = max(cp_cam.vl["SPAS12"]["CF_Spas_FIL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FIR_Ind"],
                                   cp_cam.vl["SPAS12"]["CF_Spas_FOL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FOR_Ind"])
 
