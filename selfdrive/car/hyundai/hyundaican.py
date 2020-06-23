@@ -63,13 +63,13 @@ def create_clu11(packer, frame, bus, clu11, button, speed):
   values["CF_Clu_AliveCnt1"] = frame // 2 % 0x10
   return packer.make_can_msg("CLU11", bus, values)
 
-def create_scc12(packer, apply_accel, enabled, standstill, accpause, spasstate, spasaccel, cnt, scc12):
+def create_scc12(packer, apply_accel, enabled, standstill, accpause, spaspause, spasaccel, cnt, scc12):
   values = scc12
   if enabled and (not accpause):
     values["ACCMode"] = 1
     if (apply_accel < 0):
       values["StopReq"] = standstill
-  elif spasstate > 0 and spasaccel < 0.:
+  elif not spaspause and spasaccel < 0.51:
     values["ACCMode"] = 1
   else:
     values["ACCMode"] = 0
@@ -77,7 +77,7 @@ def create_scc12(packer, apply_accel, enabled, standstill, accpause, spasstate, 
   if enabled:
     values["aReqRaw"] = apply_accel
     values["aReqValue"] = apply_accel
-  elif spasstate > 0:
+  elif not spaspause:
     values["aReqRaw"] = spasaccel
     values["aReqValue"] = spasaccel
   else:
