@@ -108,7 +108,8 @@ class CarController():
     # gas and brake
     apply_accel = actuators.gas - actuators.brake
 
-    apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
+    if not CS.out.spasOn:
+      apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
     apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
 
     # Steering Torque
@@ -218,7 +219,7 @@ class CarController():
     # reverse parking left - 18
     # parallel parking right - 19
     # parking exit left - 40
-    if CS.spas_on and self.op_spas_state == -1:
+    if CS.out.spasOn and self.op_spas_state == -1:
       print('SPAS ON')
       self.op_spas_state = 0  # SPAS enabled
 
@@ -339,21 +340,22 @@ class CarController():
     if self.op_spas_speed_control:
       if not CS.out.standstill and not CS.out.gasPressed and not CS.out.brakePressed \
             and not self.gear_shift == GearShifter.park and self.gear_shift == self.prev_gear_shift:
-        self.target = 0.28
-        self.target = min(self.target, CS.out.vEgo + 0.14)
-        self.target = min(self.target, self.prev_target + 0.001)
-        self.error = (CS.out.vEgo - self.target)
-        if self.error > 0.1: # brake
-          self.p_part = self.error * 0.15
-          self.i_part += self.error * 0.015
-        elif self.error < 0.: # release
-          self.p_part =  self.error * 1.
-          self.i_part += self.error * 0.06
-        self.i_part = min(self.i_part, 0.5)
-        self.spas_accel = min(-(self.p_part + self.i_part), 0.5)
+        #self.target = 0.56
+        #self.target = min(self.target, CS.out.vEgo + 0.14)
+        #self.target = min(self.target, self.prev_target + 0.001)
+        #self.error = (CS.out.vEgo - self.target)
+        #if self.error > 0.1: # brake
+        #  self.p_part = self.error * 0.15
+        #  self.i_part += self.error * 0.015
+        #elif self.error < 0.: # release
+        #  self.p_part =  self.error * 1.
+        #  self.i_part += self.error * 0.06
+        #self.i_part = min(self.i_part, 0.5)
+        #self.spas_accel = min(-(self.p_part + self.i_part), 0.5)
+        self.spas_accel = apply_accel
       else:
-        self.i_part = 0.
-        self.target = 0.
+        #self.i_part = 0.
+        #self.target = 0.
         self.spas_accel = 0.
 
     if self.op_spas_brake_state == 13 or self.op_spas_sensor_brake_state == 3:
@@ -365,7 +367,7 @@ class CarController():
     elif not self.op_spas_speed_control:
       self.spas_accel = 0.
 
-    if not CS.spas_on or CS.out.vEgo > 2. or self.gear_shift == GearShifter.park:
+    if not CS.out.spasOn or CS.out.vEgo > 2. or self.gear_shift == GearShifter.park:
       self.op_spas_state = -1  # no control
       self.op_spas_brake_state = 0
       self.spas_accel = 0.

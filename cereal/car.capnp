@@ -127,6 +127,7 @@ struct CarState {
   events @13 :List(CarEvent);
 
   leadDistance @37 : Float32;
+  spasOn @41 : Bool;
 
   # car speed
   vEgo @1 :Float32;         # best estimate of speed
