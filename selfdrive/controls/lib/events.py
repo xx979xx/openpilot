@@ -75,7 +75,7 @@ class Events:
             alert = alert(*callback_args)
 
           if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
-            alert.alert_type = EVENT_NAME[e]
+            alert.alert_type = f"{EVENT_NAME[e]}/{et}"
             ret.append(alert)
     return ret
 
@@ -207,8 +207,6 @@ EVENTS = {
   #EventName.gasPressed: {ET.PRE_ENABLE: None},
 
   #EventName.laneChangeBlocked: {},
-
-  #EventName.focusRecoverActive: {},
 
   # ********** events only containing alerts displayed in all states **********
 
@@ -544,10 +542,10 @@ EVENTS = {
     ET.NO_ENTRY: wrong_car_mode_alert,
   },
 
-  #EventName.wrongCruiseMode: {
-  #  ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
-  #  ET.NO_ENTRY: NoEntryAlert("Enable Adaptive Cruise"),
-  #},
+  EventName.wrongCruiseMode: {
+    ET.USER_DISABLE: EngagementAlert(AudibleAlert.chimeDisengage),
+    ET.NO_ENTRY: NoEntryAlert("Enable Adaptive Cruise"),
+  },
 
   EventName.steerTempUnavailable: {
     ET.WARNING: Alert(
@@ -566,6 +564,14 @@ EVENTS = {
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
     ET.NO_ENTRY: NoEntryAlert("Vision Model Output Uncertain"),
+  },
+
+  EventName.focusRecoverActive: {
+    ET.WARNING: Alert(
+      "TAKE CONTROL",
+      "Attempting Refocus: Camera Focus Invalid",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 3.),
   },
 
   EventName.outOfSpace: {
@@ -595,9 +601,9 @@ EVENTS = {
     ET.NO_ENTRY: NoEntryAlert("No Data from Device Sensors"),
   },
 
-#  EventName.noGps: {
-#    ET.PERMANENT: no_gps_alert,
-#  },
+  EventName.noGps: {
+    ET.PERMANENT: no_gps_alert,
+  },
 
   EventName.soundsUnavailable: {
     ET.PERMANENT: Alert(

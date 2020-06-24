@@ -53,7 +53,7 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      self.sm = messaging.SubMaster(['thermal', 'health', 'model', 'liveCalibration',
+      self.sm = messaging.SubMaster(['thermal', 'health', 'frame', 'model', 'liveCalibration',
                                      'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman'])
 
     self.can_sock = can_sock
@@ -211,13 +211,16 @@ class Controls:
     if not self.sm['liveLocationKalman'].sensorsOK and os.getenv("NOSENSOR") is None:
       if self.sm.frame > 5 / DT_CTRL:  # Give locationd some time to receive all the inputs
         self.events.add(EventName.sensorDataInvalid)
-#    if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and os.getenv("NOSENSOR") is None:
+    if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and os.getenv("NOSENSOR") is None:
       # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
-#      self.events.add(EventName.noGps)
+      self.events.add(EventName.noGps)
     if not self.sm['pathPlan'].paramsValid:
       self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['liveLocationKalman'].posenetOK:
       self.events.add(EventName.posenetInvalid)
+    if not self.sm['frame'].recoverState < 2:
+      # counter>=2 is active
+      self.events.add(EventName.focusRecoverActive)
     if not self.sm['plan'].radarValid:
       self.events.add(EventName.radarFault)
     if self.sm['plan'].radarCanError:
