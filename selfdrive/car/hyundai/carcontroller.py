@@ -18,13 +18,6 @@ ACCEL_MAX = 3.  # 1.5 m/s2
 ACCEL_MIN = -8.  # 3   m/s2
 ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
-CONTROL1_BP = [0.0, 0.1, 0.5]
-CONTROL1_A = [0.5, 0.3, 0.0]
-CONTROL2_BP = [0.0, 0.1]
-CONTROL2_A = [0.7, 0.5]
-CONTROL3_BP = [0.3, 0.0]
-CONTROL3_A = [2.0, 1.0]
-
 def accel_hysteresis(accel, accel_steady):
 
   # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
@@ -99,6 +92,7 @@ class CarController():
     self.p_part = 0.
     self.i_part = 0.
     self.gear_shift = 0
+    self.op_spas_speed_control = False
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart, set_speed, lead_visible):
@@ -214,6 +208,7 @@ class CarController():
     self.prev_spas_accel = self.spas_accel
     self.prev_gear_shift = self.gear_shift
     self.gear_shift = CS.out.gearShifter
+    self.prev_op_spas_speed_control = self.op_spas_speed_control
 
     # todo add all parking type enumeration below
     # reverse parking left - 18
@@ -225,7 +220,7 @@ class CarController():
 
     if self.op_spas_state == 0 and (CS.prev_spas_hmi_state != 18 and CS.spas_hmi_state == 18 or
                                     CS.prev_spas_hmi_state != 19 and CS.spas_hmi_state == 19):
-                                  # CS.prev_spas_hmi_state != 40 and CS.spas_hmi_state == 40):
+                                    #CS.prev_spas_hmi_state != 40 and CS.spas_hmi_state == 40):
       self.op_spas_state = 1  # space found
       self.op_spas_brake_state = 13
       self.phasecount = 0
@@ -338,11 +333,19 @@ class CarController():
     self.prev_target = self.target
 
     if self.op_spas_speed_control:
-      if not CS.out.standstill and not CS.out.gasPressed and not CS.out.brakePressed \
-            and not self.gear_shift == GearShifter.park and self.gear_shift == self.prev_gear_shift:
-        #self.target = 0.56
-        #self.target = min(self.target, CS.out.vEgo + 0.14)
-        #self.target = min(self.target, self.prev_target + 0.001)
+      if not CS.out.gasPressed and not self.gear_shift == GearShifter.park:
+        if not CS.out.standstill:
+          if self.target >= 2.1:
+            self.target = 1.
+          else:
+            self.target = 2.
+         #self.target = min(self.target, CS.out.vEgo + 0.14)
+          self.target = min(self.target, self.prev_target + 0.01)
+        else:
+          self.target = clip(self.prev_target + 0.005, 1.65, 3.3)
+
+        if self.gear_shift != self.prev_gear_shift or self.gear_shift == GearShifter.neutral:
+          self.target = 0.
         #self.error = (CS.out.vEgo - self.target)
         #if self.error > 0.1: # brake
         #  self.p_part = self.error * 0.15
@@ -353,17 +356,20 @@ class CarController():
         #self.i_part = min(self.i_part, 0.5)
         #self.spas_accel = min(-(self.p_part + self.i_part), 0.5)
         self.spas_accel = apply_accel
-      else:
+      #else:
         #self.i_part = 0.
         #self.target = 0.
-        self.spas_accel = 0.
+        #self.spas_accel = 0.
 
     if self.op_spas_brake_state == 13 or self.op_spas_sensor_brake_state == 3:
-      self.spas_accel = min(self.spas_accel, -interp(CS.out.vEgo, CONTROL3_BP, CONTROL3_A))
+      self.spas_accel = min(self.spas_accel, -3.0)
+      self.target = 0.
     elif self.op_spas_brake_state == 12 or self.op_spas_sensor_brake_state == 2:
-      self.spas_accel = min(self.spas_accel, -interp(CS.out.vEgo, CONTROL2_BP, CONTROL2_A))
+      self.spas_accel = min(self.spas_accel, -2.5)
+      self.target = 0.
     elif self.op_spas_brake_state == 11 or self.op_spas_sensor_brake_state == 1:
-      self.spas_accel = min(self.spas_accel, -interp(CS.out.vEgo, CONTROL1_BP, CONTROL1_A))
+      self.spas_accel = min(self.spas_accel, -2.0)
+      self.target = 0.
     elif not self.op_spas_speed_control:
       self.spas_accel = 0.
 
@@ -382,7 +388,7 @@ class CarController():
         self.prev_spas_accel = self.spas_accel
       self.spas_count = 0
 
-    if self.op_spas_state == -1 or CS.out.gasPressed or CS.out.brakePressed:
+    if self.op_spas_state == -1 or CS.out.gasPressed:
       self.spas_paused = True
     else:
       self.spas_paused = False
