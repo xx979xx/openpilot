@@ -274,6 +274,7 @@ class CarInterface(CarInterfaceBase):
     else:
       self.CC.turning_indicator_alert = False
 
+    ret.spasTarget = self.CC.target
     # LKAS button alert logic: reverse on/off
     #if not self.CS.lkas_error and self.CS.lkas_button_on != self.CS.prev_lkas_button_on:
       #self.CC.lkas_button_on = not self.CC.lkas_button_on

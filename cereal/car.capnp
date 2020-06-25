@@ -128,6 +128,7 @@ struct CarState {
 
   leadDistance @37 : Float32;
   spasOn @41 : Bool;
+  spasTarget @42 :Float32;
 
   # car speed
   vEgo @1 :Float32;         # best estimate of speed

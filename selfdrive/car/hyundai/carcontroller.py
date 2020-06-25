@@ -433,3 +433,4 @@ class CarController():
       can_sends.append(create_lfa_mfa(self.packer, frame, enabled))
 
     return can_sends
+

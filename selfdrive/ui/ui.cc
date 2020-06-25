@@ -198,6 +198,9 @@ static void ui_init(UIState *s) {
   s->pm = new PubMaster({"offroadLayout"});
 
   s->ipc_fd = -1;
+  s->scene.satelliteCount = -1;
+  s->started = false;
+  s->vision_seen = false;
 
   // init display
   s->fb = framebuffer_init("ui", 0, true, &s->fb_w, &s->fb_h);
@@ -511,7 +514,6 @@ static void ui_update(UIState *s) {
 
     s->vision_connect_firstrun = false;
 
-    s->controls_timeout = 6 * UI_FREQ;
     s->alert_blinking_alpha = 1.0;
     s->alert_blinked = false;
   }
@@ -734,6 +736,7 @@ int main(int argc, char* argv[]) {
   UIState uistate = {};
   UIState *s = &uistate;
   ui_init(s);
+
   enable_event_processing(true);
 
   pthread_t connect_thread_handle;
@@ -774,10 +777,6 @@ int main(int argc, char* argv[]) {
 
   int draws = 0;
 
-  s->scene.satelliteCount = -1;
-  s->started = false;
-  s->vision_seen = false;
-
   while (!do_exit) {
     bool should_swap = false;
     if (!s->started) {
@@ -813,6 +812,10 @@ int main(int argc, char* argv[]) {
     if (!s->started) {
       // always process events offroad
       check_messages(s);
+
+      if (s->started) {
+        s->controls_timeout = 5 * UI_FREQ;
+      }
     } else {
       set_awake(s, true);
       // Car started, fetch a new rgb image from ipc
@@ -860,11 +863,9 @@ int main(int argc, char* argv[]) {
     } else if (s->started) {
       if (!s->controls_seen) {
         // car is started, but controlsState hasn't been seen at all
-        LOGE("Controls failed to start");
         s->scene.alert_text1 = "openpilot Unavailable";
-        s->scene.alert_text2 = "Controls Failed to Start";
+        s->scene.alert_text2 = "Waiting for controls to start";
         s->scene.alert_size = cereal::ControlsState::AlertSize::MID;
-        update_status(s, STATUS_WARNING);
       } else {
         // car is started, but controls is lagging or died
         LOGE("Controls unresponsive");

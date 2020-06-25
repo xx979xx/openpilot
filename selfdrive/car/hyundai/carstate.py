@@ -1,3 +1,4 @@
+
 from cereal import car
 from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES
 from selfdrive.car.interfaces import CarStateBase
@@ -188,6 +189,7 @@ class CarState(CarStateBase):
       self.spasOn = False if ret.gearShifter == GearShifter.park or ret.gasPressed or ret.brakePressed else True
 
     ret.spasOn = self.spasOn != 0
+
     self.prev_front_sensor_state = self.front_sensor_state
     self.front_sensor_state = max(cp_cam.vl["SPAS12"]["CF_Spas_FIL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FIR_Ind"],
                                   cp_cam.vl["SPAS12"]["CF_Spas_FOL_Ind"], cp_cam.vl["SPAS12"]["CF_Spas_FOR_Ind"])

@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sched.h>
+#include <errno.h>
 #include <sys/time.h>
 #include <sys/cdefs.h>
 #include <sys/types.h>
@@ -37,12 +38,16 @@ int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func)
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "ubloxRaw");
   assert(subscriber != NULL);
+  subscriber->setTimeout(100);
 
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
   while (!do_exit) {
     Message * msg = subscriber->receive();
     if (!msg){
+      if (errno == EINTR) {
+        do_exit = true;
+      }
       continue;
     }
 
