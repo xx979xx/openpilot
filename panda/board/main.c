@@ -129,17 +129,17 @@ void set_safety_mode(uint16_t mode, int16_t param) {
       can_silent = ALL_CAN_SILENT;
       break;
     case SAFETY_NOOUTPUT:
-      set_intercept_relay(false);
+      set_intercept_relay(true);
       if (board_has_obd()) {
         current_board->set_can_mode(CAN_MODE_NORMAL);
       }
       can_silent = ALL_CAN_LIVE;
       break;
     case SAFETY_ELM327:
-      set_intercept_relay(false);
+      set_intercept_relay(true);
       heartbeat_counter = 0U;
       if (board_has_obd()) {
-        current_board->set_can_mode(CAN_MODE_OBD_CAN2);
+        current_board->set_can_mode(CAN_MODE_NORMAL);
       }
       can_silent = ALL_CAN_LIVE;
       break;
@@ -249,11 +249,8 @@ void usb_cb_enumeration_complete() {
 int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) {
   unsigned int resp_len = 0;
   uart_ring *ur = NULL;
-  uint32_t ts;
-  uint32_t ts_timer;
+  int i;
   timestamp_t t;
-  bool k_wakeup;
-  bool l_wakeup;
   switch (setup->b.bRequest) {
     // **** 0xa0: get rtc time
     case 0xa0:
@@ -560,45 +557,38 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
     case 0xe7:
       set_power_save_state(setup->b.wValue.w);
       break;
-    // **** 0xf0: k-line/l-line wake-up pulse for KWP2000 fast initialization
+    // **** 0xf0: do k-line wValue pulse on uart2 for Acura
     case 0xf0:
-      k_wakeup = (setup->b.wValue.w == 0U) || (setup->b.wValue.w == 2U);
-      l_wakeup = (setup->b.wValue.w == 1U) || (setup->b.wValue.w == 2U);
-
-      ts = TIM2->CNT;
-      ts_timer = ts;
-      if (k_wakeup) {
-        set_gpio_output(GPIOC, 12, false);
-      }
-      if (l_wakeup) {
-        set_gpio_output(GPIOC, 10, false);
+      if (setup->b.wValue.w == 1U) {
+        GPIOC->ODR &= ~(1U << 10);
+        GPIOC->MODER &= ~GPIO_MODER_MODER10_1;
+        GPIOC->MODER |= GPIO_MODER_MODER10_0;
+      } else {
+        GPIOC->ODR &= ~(1U << 12);
+        GPIOC->MODER &= ~GPIO_MODER_MODER12_1;
+        GPIOC->MODER |= GPIO_MODER_MODER12_0;
       }
 
-      // hold low for 25 ms
-      while (get_ts_elapsed(TIM2->CNT, ts) < 25000U) {
-        // toggle pin every 5 ms to reset TXD dominant time-out timer
-        if (get_ts_elapsed(TIM2->CNT, ts_timer) >= 5000U) {
-          ts_timer = TIM2->CNT;
-          if (k_wakeup) {
-            register_set_bits(&(GPIOC->ODR), (1U << 12));
-            register_clear_bits(&(GPIOC->ODR), (1U << 12));
-          }
-          if (l_wakeup) {
-            register_set_bits(&(GPIOC->ODR), (1U << 10));
-            register_clear_bits(&(GPIOC->ODR), (1U << 10));
-          }
+      for (i = 0; i < 80; i++) {
+        delay(8000);
+        if (setup->b.wValue.w == 1U) {
+          GPIOC->ODR |= (1U << 10);
+          GPIOC->ODR &= ~(1U << 10);
+        } else {
+          GPIOC->ODR |= (1U << 12);
+          GPIOC->ODR &= ~(1U << 12);
         }
       }
 
-      if (k_wakeup) {
-        set_gpio_mode(GPIOC, 12, MODE_ALTERNATE);
+      if (setup->b.wValue.w == 1U) {
+        GPIOC->MODER &= ~GPIO_MODER_MODER10_0;
+        GPIOC->MODER |= GPIO_MODER_MODER10_1;
+      } else {
+        GPIOC->MODER &= ~GPIO_MODER_MODER12_0;
+        GPIOC->MODER |= GPIO_MODER_MODER12_1;
       }
-      if (l_wakeup) {
-        set_gpio_mode(GPIOC, 10, MODE_ALTERNATE);
-      }
-      // hold high until 49ms have passed
-      // (start communication needs to follow 49ms to 51ms after start of wakeup)
-      while (get_ts_elapsed(TIM2->CNT, ts) < 49000U) {}
+
+      delay(140 * 9000);
       break;
     // **** 0xf1: Clear CAN ring buffer.
     case 0xf1:
@@ -727,8 +717,8 @@ void TIM1_BRK_TIM9_IRQ_Handler(void) {
       puts("EON hasn't sent a heartbeat for 0x");
       puth(heartbeat_counter);
       puts(" seconds. Safety is set to SILENT mode.\n");
-      if (current_safety_mode != SAFETY_SILENT) {
-        set_safety_mode(SAFETY_SILENT, 0U);
+      if (current_safety_mode != SAFETY_ALLOUTPUT) {
+        set_safety_mode(SAFETY_ALLOUTPUT, 0U); // MDPS will hard if SAFETY_NOOUTPUT
       }
       if (power_save_status != POWER_SAVE_STATUS_ENABLED) {
         set_power_save_state(POWER_SAVE_STATUS_ENABLED);
@@ -839,7 +829,7 @@ int main(void) {
   // use TIM2->CNT to read
 
   // init to SILENT and can silent
-  set_safety_mode(SAFETY_SILENT, 0);
+  set_safety_mode(SAFETY_ALLOUTPUT, 0); // MDPS will hard if SAFETY_NOOUTPUT
 
   // enable CAN TXs
   current_board->enable_can_transcievers(true);

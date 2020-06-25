@@ -1,5 +1,6 @@
 # python library to interface with panda
 import datetime
+import binascii
 import struct
 import hashlib
 import socket
@@ -43,7 +44,7 @@ def parse_can_buffer(dat):
       address = f1 >> 21
     dddat = ddat[8:8 + (f2 & 0xF)]
     if DEBUG:
-      print(f"  R 0x{address:x}: 0x{dddat.hex()}")
+      print("  R %x: %s" % (address, binascii.hexlify(dddat)))
     ret.append((address, f2 >> 16, dddat, (f2 >> 4) & 0xFF))
   return ret
 
@@ -488,7 +489,7 @@ class Panda(object):
     for addr, _, dat, bus in arr:
       assert len(dat) <= 8
       if DEBUG:
-        print(f"  W 0x{addr:x}: 0x{dat.hex()}")
+        print("  W %x: %s" % (addr, binascii.hexlify(dat)))
       if addr >= 0x800:
         rir = (addr << 3) | transmit | extended
       else:
@@ -571,11 +572,10 @@ class Panda(object):
   # ******************* kline *******************
 
   # pulse low for wakeup
-  def kline_wakeup(self, k=True, l=True):
-    assert k or l, "must specify k-line, l-line, or both"
+  def kline_wakeup(self):
     if DEBUG:
       print("kline wakeup...")
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf0, 2 if k and l else int(l), 0, b'')
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf0, 0, 0, b'')
     if DEBUG:
       print("kline wakeup done")
 
@@ -587,7 +587,7 @@ class Panda(object):
       if len(ret) == 0:
         break
       elif DEBUG:
-        print(f"kline drain: 0x{ret.hex()}")
+        print("kline drain: " + binascii.hexlify(ret))
       bret += ret
     return bytes(bret)
 
@@ -596,31 +596,35 @@ class Panda(object):
     while len(echo) != cnt:
       ret = self._handle.controlRead(Panda.REQUEST_OUT, 0xe0, bus, 0, cnt - len(echo))
       if DEBUG and len(ret) > 0:
-        print(f"kline recv: 0x{ret.hex()}")
+        print("kline recv: " + binascii.hexlify(ret))
       echo += ret
     return bytes(echo)
 
   def kline_send(self, x, bus=2, checksum=True):
+    def get_checksum(dat):
+      result = 0
+      result += sum(map(ord, dat)) if isinstance(b'dat', str) else sum(dat)
+      result = -result
+      return struct.pack("B", result % 0x100)
+
     self.kline_drain(bus=bus)
     if checksum:
-      x += bytes([sum(x) % 0x100])
+      x += get_checksum(x)
     for i in range(0, len(x), 0xf):
       ts = x[i:i + 0xf]
       if DEBUG:
-        print(f"kline send: 0x{ts.hex()}")
+        print("kline send: " + binascii.hexlify(ts))
       self._handle.bulkWrite(2, bytes([bus]) + ts)
       echo = self.kline_ll_recv(len(ts), bus=bus)
       if echo != ts:
-        print(f"**** ECHO ERROR {i} ****")
-        print(f"0x{echo.hex()}")
-        print(f"0x{ts.hex()}")
+        print("**** ECHO ERROR %d ****" % i)
+        print(binascii.hexlify(echo))
+        print(binascii.hexlify(ts))
     assert echo == ts
 
-  def kline_recv(self, bus=2, header_len=4):
-    # read header (last byte is length)
-    msg = self.kline_ll_recv(header_len, bus=bus)
-    # read data (add one byte to length for checksum)
-    msg += self.kline_ll_recv(msg[-1]+1, bus=bus)
+  def kline_recv(self, bus=2):
+    msg = self.kline_ll_recv(2, bus=bus)
+    msg += self.kline_ll_recv(ord(msg[1]) - 2, bus=bus)
     return msg
 
   def send_heartbeat(self):
