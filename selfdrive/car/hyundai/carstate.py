@@ -20,8 +20,6 @@ class CarState(CarStateBase):
     self.leftBlinker = False
     self.rightBlinker = False
     self.lkas_button_on = True
-    self.has_scc13 = CP.carFingerprint in FEATURES["has_scc13"]
-    self.has_scc14 = CP.carFingerprint in FEATURES["has_scc14"]
     self.cruise_main_button = 0
     self.cruiseStateavailable = 0
     self.prev_cruiseStateavailable = 0
@@ -32,6 +30,7 @@ class CarState(CarStateBase):
     self.front_sensor_state = 0
     self.rear_sensor_state = 0
     self.spasOn = 0
+    self.brakeHold
 
   def update(self, cp, cp2, cp_cam):
     cp_mdps = cp2 if self.mdps_bus else cp
@@ -77,11 +76,11 @@ class CarState(CarStateBase):
 
     # if no lead then allow AVH and wait for gas press to disable AVH
     if (cp.vl["ESP11"]['AVH_STAT'] == 1) and (cp_scc.vl["SCC11"]['ACC_ObjStatus'] == 0):
-      ret.brakeHold = True
+      self.brakeHold = True
     elif ret.gasPressed or ret.vEgo > 0.3:
-      ret.brakeHold = False
+      self.brakeHold = False
 
-   
+    ret.brakeHold = self.brakeHold != 0
 
     self.cruise_main_button = int(cp.vl["CLU11"]["CF_Clu_CruiseSwMain"])
     self.cruise_buttons = int(cp.vl["CLU11"]["CF_Clu_CruiseSwState"])
