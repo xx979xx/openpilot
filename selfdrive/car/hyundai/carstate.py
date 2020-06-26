@@ -30,7 +30,7 @@ class CarState(CarStateBase):
     self.front_sensor_state = 0
     self.rear_sensor_state = 0
     self.spasOn = 0
-    self.brakeHold
+    self.brakeHold = 0
 
   def update(self, cp, cp2, cp_cam):
     cp_mdps = cp2 if self.mdps_bus else cp
