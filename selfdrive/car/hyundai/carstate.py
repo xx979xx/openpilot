@@ -151,7 +151,7 @@ class CarState(CarStateBase):
     # Gear Selecton - This is only compatible with optima hybrid 2017
     elif self.CP.carFingerprint in FEATURES["use_elect_gears"]:
       gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
-      if gear in (5, 8): # 5: D, 8: sport mode
+      if gear in (5, 8):  # 5: D, 8: sport mode
         ret.gearShifter = GearShifter.drive
       elif gear == 6:
         ret.gearShifter = GearShifter.neutral
@@ -164,7 +164,7 @@ class CarState(CarStateBase):
     # Gear Selecton - This is not compatible with all Kia/Hyundai's, But is the best way for those it is compatible with
     else:
       gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
-      if gear in (5, 8): # 5: D, 8: sport mode
+      if gear in (5, 8):  # 5: D, 8: sport mode
         ret.gearShifter = GearShifter.drive
       elif gear == 6:
         ret.gearShifter = GearShifter.neutral
@@ -175,8 +175,6 @@ class CarState(CarStateBase):
       else:
         ret.gearShifter = GearShifter.unknown
 
-    # Blind Spot Detection and Lane Change Assist signals
-    self.lca_state = cp.vl["LCA11"]["CF_Lca_Stat"]
     ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
     ret.rightBlindspot = cp.vl["LCA11"]["CF_Lca_IndRight"] != 0
 
@@ -211,16 +209,11 @@ class CarState(CarStateBase):
       self.lkas_button_on = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"]
     self.left_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigLh']
     self.right_blinker_flash = cp.vl["CGW1"]['CF_Gway_TurnSigRh']
-    if self.has_scc13:
-      self.scc13 = cp_scc.vl["SCC13"]
-    if self.has_scc14:
-      self.scc14 = cp_scc.vl["SCC14"]
 
     return ret
 
   @staticmethod
   def get_can_parser(CP):
-
     signals = [
       # sig_name, sig_address, default
       ("WHL_SPD_FL", "WHL_SPD11", 0),
@@ -232,16 +225,16 @@ class CarState(CarStateBase):
 
       ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
 
-      ("CF_Gway_DrvSeatBeltSw", "CGW1", 0), # Driver Seatbelt
-      ("CF_Gway_DrvDrSw", "CGW1", 0),       # Driver Door is open
-      ("CF_Gway_AstDrSw", "CGW1", 0),       # Passenger door is open
-      ("CF_Gway_RLDrSw", "CGW2", 0),        # Rear reft door is open
-      ("CF_Gway_RRDrSw", "CGW2", 0),        # Rear right door is open
+      ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
+      ("CF_Gway_DrvDrSw", "CGW1", 0),       # Driver Door
+      ("CF_Gway_AstDrSw", "CGW1", 0),       # Passenger door
+      ("CF_Gway_RLDrSw", "CGW2", 0),        # Rear reft door
+      ("CF_Gway_RRDrSw", "CGW2", 0),        # Rear right door
       ("CF_Gway_TSigLHSw", "CGW1", 0),
       ("CF_Gway_TurnSigLh", "CGW1", 0),
       ("CF_Gway_TSigRHSw", "CGW1", 0),
       ("CF_Gway_TurnSigRh", "CGW1", 0),
-      ("CF_Gway_ParkBrakeSw", "CGW1", 0),   # Parking Brake
+      ("CF_Gway_ParkBrakeSw", "CGW1", 0),
 
       ("CYL_PRES", "ESP12", 0),
 
@@ -310,15 +303,6 @@ class CarState(CarStateBase):
       ("AEB_StopReq", "SCC12", 0),
       ("CR_VSM_Alive", "SCC12", 0),
       ("CR_VSM_ChkSum", "SCC12", 0),
-      ("SCCDrvModeRValue", "SCC13", 2),
-      ("SCC_Equip", "SCC13", 1),
-      ("AebDrvSetStatus", "SCC13", 0),
-
-      ("JerkUpperLimit", "SCC14", 0),
-      ("JerkLowerLimit", "SCC14", 0),
-      ("SCCMode2", "SCC14", 0),
-      ("ComfortBandUpper", "SCC14", 0),
-      ("ComfortBandLower", "SCC14", 0),
     ]
 
     checks = [
@@ -475,16 +459,6 @@ class CarState(CarStateBase):
         ("AEB_StopReq", "SCC12", 0),
         ("CR_VSM_Alive", "SCC12", 0),
         ("CR_VSM_ChkSum", "SCC12", 0),
-
-        ("SCCDrvModeRValue", "SCC13", 2),
-        ("SCC_Equip", "SCC13", 1),
-        ("AebDrvSetStatus", "SCC13", 0),
-
-        ("JerkUpperLimit", "SCC14", 0),
-        ("JerkLowerLimit", "SCC14", 0),
-        ("SCCMode2", "SCC14", 0),
-        ("ComfortBandUpper", "SCC14", 0),
-        ("ComfortBandLower", "SCC14", 0),
       ]
       checks += [
         ("SCC11", 50),
@@ -570,16 +544,6 @@ class CarState(CarStateBase):
         ("AEB_StopReq", "SCC12", 0),
         ("CR_VSM_Alive", "SCC12", 0),
         ("CR_VSM_ChkSum", "SCC12", 0),
-
-        ("SCCDrvModeRValue", "SCC13", 2),
-        ("SCC_Equip", "SCC13", 1),
-        ("AebDrvSetStatus", "SCC13", 0),
-
-        ("JerkUpperLimit", "SCC14", 0),
-        ("JerkLowerLimit", "SCC14", 0),
-        ("SCCMode2", "SCC14", 0),
-        ("ComfortBandUpper", "SCC14", 0),
-        ("ComfortBandLower", "SCC14", 0),
       ]
       checks += [
         ("SCC11", 50),

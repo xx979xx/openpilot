@@ -20,7 +20,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values["CF_Lkas_FusionState"] = fs_error
   values["CF_Lkas_Chksum"] = 0
 
-  if car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE]:
+  if car_fingerprint in [CAR.SONATA, CAR.PALISADE]:
     values["CF_Lkas_Bca_R"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
@@ -37,6 +37,13 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     # SysWarning 6 = keep hands on wheel (red) + beep
     # Note: the warning is hidden while the blinkers are on
     values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
+
+  elif car_fingerprint == CAR.HYUNDAI_GENESIS:
+    # This field is actually LdwsActivemode
+    # Genesis and Optima fault when forwarding while engaged
+    values["CF_Lkas_Bca_R"] = 2
+  elif car_fingerprint == CAR.KIA_OPTIMA:
+    values["CF_Lkas_Bca_R"] = 0
 
   dat = packer.make_can_msg("LKAS11", 0, values)[2]
 
@@ -137,19 +144,3 @@ def create_scc11(packer, frame, enabled, set_speed, lead_visible, standstill, sc
 
   return packer.make_can_msg("SCC11", 0, values)
 
-def create_scc13(packer, scc13):
-  values = scc13
-  return packer.make_can_msg("SCC13", 0, values)
-
-def create_scc14(packer, enabled, scc14):
-  values = scc14
-  if enabled:
-    values["JerkUpperLimit"] = 3.2
-    values["JerkLowerLimit"] = 0.1
-    values["SCCMode"] = 1
-    values["ComfortBandUpper"] = 0.24
-    values["ComfortBandLower"] = 0.24
-
-  return packer.make_can_msg("SCC14", 0, values)
-  
-  

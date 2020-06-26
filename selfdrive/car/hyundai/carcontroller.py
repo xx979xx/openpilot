@@ -404,12 +404,6 @@ class CarController():
                                     set_speed, self.lead_visible,
                                     CS.out.standstill, CS.scc11))
 
-      #if CS.has_scc13 and frame % 20 == 0:
-      #  can_sends.append(create_scc13(self.packer, CS.scc13))
-      #if CS.has_scc14:
-      #  can_sends.append(create_scc14(self.packer, enabled, CS.scc14))
-      #self.scc12_cnt += 1
-
     if CS.out.cruiseState.standstill and not self.longcontrol:
       # run only first time when the car stopped
       if self.last_lead_distance == 0:
@@ -426,11 +420,10 @@ class CarController():
           self.resume_cnt = 0
     # reset lead distnce after the car starts moving
     elif self.last_lead_distance != 0:
-      self.last_lead_distance = 0  
+      self.last_lead_distance = 0
 
     # 20 Hz LFA MFA message
-    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE]:
+    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ]:
       can_sends.append(create_lfa_mfa(self.packer, frame, enabled))
 
     return can_sends
-
