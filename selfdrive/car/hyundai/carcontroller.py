@@ -103,7 +103,13 @@ class CarController():
 
     if not CS.out.spasOn:
       apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
-    apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
+      if (CS.Vrel_radar < 0.) and (CS.lead_distance < 120.):
+        accel_dyn_min = ((CS.out.vEgo + CS.Vrel_radar) * (CS.out.vEgo + CS.Vrel_radar) -
+                         (CS.out.vEgo) * (CS.out.vEgo))/(2 * CS.lead_distance)
+      else:
+        accel_dyn_min = ACCEL_MIN
+
+    apply_accel = clip(apply_accel * ACCEL_SCALE, accel_dyn_min, ACCEL_MAX)
 
     # Steering Torque
     new_steer = actuators.steer * SteerLimitParams.STEER_MAX
