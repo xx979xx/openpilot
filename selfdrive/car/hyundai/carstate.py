@@ -330,6 +330,7 @@ class CarState(CarStateBase):
       ("CGW1", 10),
       ("CGW4", 5),
       ("WHL_SPD11", 50),
+      ("LCA11", 50),
     ]
     if CP.sccBus == 0 and CP.enableCruise:
       checks += [
