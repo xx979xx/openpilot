@@ -367,7 +367,6 @@ class CarState(CarStateBase):
       signals += [
         ("CF_Lvr_Gear","LVR12",0),
       ]
-    if CP.carFingerprint not in FEATURES["use_elect_ems"]:
       signals += [
         ("PV_AV_CAN", "EMS12", 0),
         ("CF_Ems_AclAct", "EMS16", 0),
@@ -375,14 +374,6 @@ class CarState(CarStateBase):
       checks += [
         ("EMS12", 100),
         ("EMS16", 100),
-      ]
-    else:
-      signals += [
-        ("Accel_Pedal_Pos","E_EMS11",0),
-        ("Brake_Pedal_Pos","E_EMS11",0),
-      ]
-      checks += [
-        ("E_EMS11", 100),
       ]
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
 
