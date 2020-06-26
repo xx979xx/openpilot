@@ -2,8 +2,7 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa, \
-                                             create_scc11, create_scc12, create_mdps12, \
-                                             create_scc13, create_scc14
+                                             create_scc11, create_scc12, create_mdps12
 from selfdrive.car.hyundai.interface import GearShifter
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
 from opendbc.can.packer import CANPacker
