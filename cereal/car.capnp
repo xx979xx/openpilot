@@ -420,6 +420,7 @@ struct CarParams {
   sasBus @52: Int8;
   sccBus @53: Int8;
   autoLcaEnabled @54: Bool;
+  steermaxLimit @55: Float32;
 
   struct LateralParams {
     torqueBP @0 :List(Int32);

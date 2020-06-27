@@ -1,9 +1,10 @@
+from numpy.core._multiarray_umath import square
+
 from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa, \
-                                             create_scc11, create_scc12, create_mdps12, \
-                                             create_scc13, create_scc14
+                                             create_scc11, create_scc12, create_mdps12
 from selfdrive.car.hyundai.interface import GearShifter
 from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR
 from opendbc.can.packer import CANPacker
@@ -63,6 +64,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.car_fingerprint = CP.carFingerprint
+    self.steermaxLimit = int(CP.steermaxLimit)
     self.packer = CANPacker(dbc_name)
     self.accel_steady = 0
     self.apply_steer_last = 0
@@ -98,17 +100,36 @@ class CarController():
              left_lane, right_lane, left_lane_depart, right_lane_depart, set_speed, lead_visible):
 
     # *** compute control surfaces ***
+    if lead_visible:
+      self.lead_visible = True
+      self.lead_debounce = 50
+    elif self.lead_debounce > 0:
+      self.lead_debounce -= 1
+    else:
+      self.lead_visible = lead_visible
 
     # gas and brake
     apply_accel = actuators.gas - actuators.brake
+    follow_distance = max(4, (CS.out.vEgo * .4))
 
     if not CS.out.spasOn:
       apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
-    apply_accel = clip(apply_accel * ACCEL_SCALE, ACCEL_MIN, ACCEL_MAX)
+      if not self.lead_visible:
+        accel_dyn_min = -0.5
+      elif (CS.Vrel_radar < 0.) and (CS.lead_distance < 120.):
+        accel_dyn_min = ((square(CS.out.vEgo + CS.Vrel_radar) - square(CS.out.vEgo))/(2 * max(.1, (CS.lead_distance - follow_distance))))
+        accel_dyn_min = clip(accel_dyn_min, ACCEL_MIN, -0.5)
+      else:
+        accel_dyn_min = ACCEL_MIN
+
+    apply_accel = clip(apply_accel * ACCEL_SCALE, accel_dyn_min, ACCEL_MAX)
 
     # Steering Torque
-    new_steer = actuators.steer * SteerLimitParams.STEER_MAX
-    apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, SteerLimitParams)
+    updated_SteerLimitParams = SteerLimitParams
+    updated_SteerLimitParams.STEER_MAX = self.steermaxLimit
+
+    new_steer = actuators.steer * updated_SteerLimitParams.STEER_MAX
+    apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, updated_SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable if steer angle reach 90 deg, otherwise mdps fault in some models
@@ -193,14 +214,6 @@ class CarController():
     elif CS.mdps_bus: # send mdps12 to LKAS to prevent LKAS error if no cancel cmd
       can_sends.append(create_mdps12(self.packer, frame, CS.mdps12))
 
-    if lead_visible:
-      self.lead_visible = True
-      self.lead_debounce = 50
-    elif self.lead_debounce > 0:
-      self.lead_debounce -= 1
-    else:
-      self.lead_visible = lead_visible
-
     self.acc_paused = True if (CS.out.brakePressed or CS.out.gasPressed or CS.out.brakeHold) else False
 
     self.acc_standstill = True if (LongCtrlState.stopping and CS.out.standstill) else False
@@ -213,13 +226,16 @@ class CarController():
     # todo add all parking type enumeration below
     # reverse parking left - 18
     # parallel parking right - 19
+    # parallel parking left - 20
     # parking exit left - 40
     if CS.out.spasOn and self.op_spas_state == -1:
       print('SPAS ON')
       self.op_spas_state = 0  # SPAS enabled
 
     if self.op_spas_state == 0 and (CS.prev_spas_hmi_state != 18 and CS.spas_hmi_state == 18 or
-                                    CS.prev_spas_hmi_state != 19 and CS.spas_hmi_state == 19):
+                                    CS.prev_spas_hmi_state != 19 and CS.spas_hmi_state == 19 or
+                                    CS.prev_spas_hmi_state != 20 and CS.spas_hmi_state == 20):
+                                    #CS.prev_spas_hmi_state != 40 and CS.spas_hmi_state == 40):
                                     #CS.prev_spas_hmi_state != 40 and CS.spas_hmi_state == 40):
       self.op_spas_state = 1  # space found
       self.op_spas_brake_state = 13
@@ -404,12 +420,6 @@ class CarController():
                                     set_speed, self.lead_visible,
                                     CS.out.standstill, CS.scc11))
 
-      #if CS.has_scc13 and frame % 20 == 0:
-      #  can_sends.append(create_scc13(self.packer, CS.scc13))
-      #if CS.has_scc14:
-      #  can_sends.append(create_scc14(self.packer, enabled, CS.scc14))
-      #self.scc12_cnt += 1
-
     if CS.out.cruiseState.standstill and not self.longcontrol:
       # run only first time when the car stopped
       if self.last_lead_distance == 0:
@@ -426,11 +436,10 @@ class CarController():
           self.resume_cnt = 0
     # reset lead distnce after the car starts moving
     elif self.last_lead_distance != 0:
-      self.last_lead_distance = 0  
+      self.last_lead_distance = 0
 
     # 20 Hz LFA MFA message
-    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SONATA_H, CAR.SANTA_FE]:
+    if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ]:
       can_sends.append(create_lfa_mfa(self.packer, frame, enabled))
 
     return can_sends
-
