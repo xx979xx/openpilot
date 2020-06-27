@@ -1,3 +1,5 @@
+from numpy.core._multiarray_umath import square
+
 from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.car import apply_std_steer_torque_limits
@@ -98,15 +100,25 @@ class CarController():
              left_lane, right_lane, left_lane_depart, right_lane_depart, set_speed, lead_visible):
 
     # *** compute control surfaces ***
+    if lead_visible:
+      self.lead_visible = True
+      self.lead_debounce = 50
+    elif self.lead_debounce > 0:
+      self.lead_debounce -= 1
+    else:
+      self.lead_visible = lead_visible
 
     # gas and brake
     apply_accel = actuators.gas - actuators.brake
+    follow_distance = max(4, (CS.out.vEgo * .4))
 
     if not CS.out.spasOn:
       apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
-      if (CS.Vrel_radar < 0.) and (CS.lead_distance < 120.):
-        accel_dyn_min = ((CS.out.vEgo + CS.Vrel_radar) * (CS.out.vEgo + CS.Vrel_radar) -
-                         (CS.out.vEgo) * (CS.out.vEgo))/(2 * CS.lead_distance)
+      if not self.lead_visible:
+        accel_dyn_min = -0.5
+      elif (CS.Vrel_radar < 0.) and (CS.lead_distance < 120.):
+        accel_dyn_min = ((square(CS.out.vEgo + CS.Vrel_radar) - square(CS.out.vEgo))/(2 * max(.1, (CS.lead_distance - follow_distance))))
+        accel_dyn_min = clip(accel_dyn_min, ACCEL_MIN, -0.5)
       else:
         accel_dyn_min = ACCEL_MIN
 
@@ -201,14 +213,6 @@ class CarController():
       can_sends.append(create_clu11(self.packer, frame, CS.scc_bus, CS.clu11, Buttons.CANCEL, clu11_speed))
     elif CS.mdps_bus: # send mdps12 to LKAS to prevent LKAS error if no cancel cmd
       can_sends.append(create_mdps12(self.packer, frame, CS.mdps12))
-
-    if lead_visible:
-      self.lead_visible = True
-      self.lead_debounce = 50
-    elif self.lead_debounce > 0:
-      self.lead_debounce -= 1
-    else:
-      self.lead_visible = lead_visible
 
     self.acc_paused = True if (CS.out.brakePressed or CS.out.gasPressed or CS.out.brakeHold) else False
 
