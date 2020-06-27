@@ -39,6 +39,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 1.
 
+    ret.steermaxLimit = 255  # stock
+
     #Long tuning Params -  make individual params for cars, baseline Hyundai genesis
     ret.longitudinalTuning.kpBP = [0., 5., 35.]
     ret.longitudinalTuning.kpV = [.85, .65, .65]
@@ -62,6 +64,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.35], [0.05, 0.09]]
     elif candidate == CAR.SONATA:
+      ret.steermaxLimit = 409  # stock
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1513. + STD_CARGO_KG
       ret.wheelbase = 2.84
@@ -77,6 +80,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.PALISADE:
+      ret.steermaxLimit = 409  # stock
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1999. + STD_CARGO_KG
       ret.wheelbase = 2.90
@@ -91,6 +95,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate in [CAR.ELANTRA, CAR.ELANTRA_GT_I30]:
+      ret.steermaxLimit = 409  # stock
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
@@ -100,6 +105,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.HYUNDAI_GENESIS:
+      ret.steermaxLimit = 409  # stock
       ret.lateralTuning.pid.kf = 0.00005
       ret.steerActuatorDelay = 0.4
       ret.mass = 2060. + STD_CARGO_KG
@@ -111,6 +117,7 @@ class CarInterface(CarInterfaceBase):
       #ret.minSteerSpeed = 60 * CV.KPH_TO_MS # check for MDPS harness present
 
     elif candidate == CAR.GENESIS_G80:
+      ret.steermaxLimit = 409  # stock
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
@@ -118,6 +125,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
     elif candidate == CAR.GENESIS_G90:
+      ret.steermaxLimit = 409  # stock
       ret.mass = 2200
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069

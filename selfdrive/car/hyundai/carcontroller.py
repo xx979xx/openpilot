@@ -62,6 +62,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.car_fingerprint = CP.carFingerprint
+    self.steerlimitMax = CP.steerlimitMax
     self.packer = CANPacker(dbc_name)
     self.accel_steady = 0
     self.apply_steer_last = 0
@@ -112,8 +113,14 @@ class CarController():
     apply_accel = clip(apply_accel * ACCEL_SCALE, accel_dyn_min, ACCEL_MAX)
 
     # Steering Torque
-    new_steer = actuators.steer * SteerLimitParams.STEER_MAX
-    apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, SteerLimitParams)
+    updated_SteerLimitParams = SteerLimitParams
+    updated_SteerLimitParams.STEER_MAX = self.steermaxLimit
+    print('new steer max', updated_SteerLimitParams.STEER_MAX)
+    print('new steer up', updated_SteerLimitParams.STEER_DELTA_UP)
+    print('new steer down', updated_SteerLimitParams.STEER_DELTA_DOWN)
+
+    new_steer = actuators.steer * updated_SteerLimitParams.STEER_MAX
+    apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, updated_SteerLimitParams)
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable if steer angle reach 90 deg, otherwise mdps fault in some models

@@ -76,7 +76,7 @@ def create_scc12(packer, apply_accel, enabled, standstill, accpause, spason, spa
     values["ACCMode"] = 1
     if (apply_accel < 0):
       values["StopReq"] = standstill
-  elif not spaspause and spasaccel < 0.21:
+  elif spason and not spaspause and spasaccel < 0.21:
     values["ACCMode"] = 1
   else:
     values["ACCMode"] = 0
