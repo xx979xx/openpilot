@@ -115,9 +115,6 @@ class CarController():
     # Steering Torque
     updated_SteerLimitParams = SteerLimitParams
     updated_SteerLimitParams.STEER_MAX = self.steermaxLimit
-    print('new steer max', updated_SteerLimitParams.STEER_MAX)
-    print('new steer up', updated_SteerLimitParams.STEER_DELTA_UP)
-    print('new steer down', updated_SteerLimitParams.STEER_DELTA_DOWN)
 
     new_steer = actuators.steer * updated_SteerLimitParams.STEER_MAX
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, updated_SteerLimitParams)
