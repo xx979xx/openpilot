@@ -62,7 +62,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.car_fingerprint = CP.carFingerprint
-    self.steerlimitMax = CP.steerlimitMax
+    self.steermaxLimit = CP.steermaxLimit
     self.packer = CANPacker(dbc_name)
     self.accel_steady = 0
     self.apply_steer_last = 0
@@ -225,13 +225,15 @@ class CarController():
     # todo add all parking type enumeration below
     # reverse parking left - 18
     # parallel parking right - 19
+    # parallel parking left - 20
     # parking exit left - 40
     if CS.out.spasOn and self.op_spas_state == -1:
       print('SPAS ON')
       self.op_spas_state = 0  # SPAS enabled
 
     if self.op_spas_state == 0 and (CS.prev_spas_hmi_state != 18 and CS.spas_hmi_state == 18 or
-                                    CS.prev_spas_hmi_state != 19 and CS.spas_hmi_state == 19):
+                                    CS.prev_spas_hmi_state != 19 and CS.spas_hmi_state == 19 or
+                                    CS.prev_spas_hmi_state != 20 and CS.spas_hmi_state == 20):
                                     #CS.prev_spas_hmi_state != 40 and CS.spas_hmi_state == 40):
       self.op_spas_state = 1  # space found
       self.op_spas_brake_state = 13
