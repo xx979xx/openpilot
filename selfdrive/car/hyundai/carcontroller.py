@@ -95,6 +95,7 @@ class CarController():
     self.i_part = 0.
     self.gear_shift = 0
     self.op_spas_speed_control = False
+    self.visionbrakestart = False
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart, set_speed, lead_visible):
@@ -112,15 +113,20 @@ class CarController():
     apply_accel = actuators.gas - actuators.brake
     follow_distance = max(4, (CS.out.vEgo * .4))
 
+    if(apply_accel >= 0):
+      self.visionbrakestart = False
+
     if not CS.out.spasOn:
       apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
       if not self.lead_visible:
         accel_dyn_min = -0.5
-      elif (CS.Vrel_radar < 0.) and (CS.lead_distance < 120.):
+      elif (CS.Vrel_radar < 0.) and (6. < CS.lead_distance < 140.) and not self.visionbrakestart:
         accel_dyn_min = ((square(CS.out.vEgo + CS.Vrel_radar) - square(CS.out.vEgo))/(2 * max(.1, (CS.lead_distance - follow_distance))))
         accel_dyn_min = clip(accel_dyn_min, ACCEL_MIN, -0.5)
       else:
         accel_dyn_min = ACCEL_MIN
+        if (apply_accel < -0.5):
+          self.visionbrakestart = True
 
     apply_accel = clip(apply_accel * ACCEL_SCALE, accel_dyn_min, ACCEL_MAX)
 
