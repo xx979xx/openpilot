@@ -31,14 +31,14 @@ def accel_hysteresis(accel, accel_steady):
   return accel, accel_steady
 
 def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
-                      right_lane, left_lane_depart, right_lane_depart, button_on):
+                      right_lane, left_lane_depart, right_lane_depart):
   sys_warning = (visual_alert == VisualAlert.steerRequired)
   if sys_warning:
       sys_warning = 4 if fingerprint in [CAR.HYUNDAI_GENESIS, CAR.GENESIS_G90, CAR.GENESIS_G80] else 3
 
   # initialize to no lane visible
   sys_state = 1
-  if not button_on:
+  if not enabled:
     sys_state = 0
   if left_lane and right_lane or sys_warning:  #HUD alert only display when LKAS status is active
     if enabled or sys_warning:
@@ -63,19 +63,17 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.steermaxLimit = int(CP.steermaxLimit)
     self.packer = CANPacker(dbc_name)
     self.accel_steady = 0
-    self.apply_steer_last = 0
     self.steer_rate_limited = False
     self.lkas11_cnt = 0
     self.scc12_cnt = 0
     self.resume_cnt = 0
     self.last_resume_frame = 0
     self.last_lead_distance = 0
-    self.turning_signal_timer = 0
-    self.lkas_button_on = True
     self.longcontrol = True #TODO: make auto
     self.fs_error = False
     self.update_live = False
@@ -91,8 +89,6 @@ class CarController():
     self.spas_count = 0
     self.op_spas_sensor_brake_state = 0
     self.target = 0.
-    self.p_part = 0.
-    self.i_part = 0.
     self.gear_shift = 0
     self.op_spas_speed_control = False
     self.visionbrakestart = False
@@ -111,21 +107,21 @@ class CarController():
 
     # gas and brake
     apply_accel = actuators.gas - actuators.brake
-    follow_distance = max(4, (CS.out.vEgo * .4))
+    follow_distance = max(4., (CS.out.vEgo * .4))
 
-    if(apply_accel >= 0):
+    if(apply_accel >= 0.):
       self.visionbrakestart = False
 
     if not CS.out.spasOn:
       apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
       if not self.lead_visible:
         accel_dyn_min = -0.5
-      elif (CS.Vrel_radar < 0.) and (6. < CS.lead_distance < 140.) and not self.visionbrakestart:
+      elif (CS.Vrel_radar < 0.) and (3. < CS.lead_distance < 140.) and not self.visionbrakestart:
         accel_dyn_min = ((square(CS.out.vEgo + CS.Vrel_radar) - square(CS.out.vEgo))/(2 * max(.1, (CS.lead_distance - follow_distance))))
         accel_dyn_min = clip(accel_dyn_min, ACCEL_MIN, -0.5)
       else:
         accel_dyn_min = ACCEL_MIN
-        if (apply_accel < -0.5):
+        if apply_accel < (-0.5 / ACCEL_SCALE):
           self.visionbrakestart = True
 
     apply_accel = clip(apply_accel * ACCEL_SCALE, accel_dyn_min, ACCEL_MAX)
@@ -139,23 +135,11 @@ class CarController():
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable if steer angle reach 90 deg, otherwise mdps fault in some models
-    # temporarily disable steering when LKAS button off 
-    lkas_active = enabled and abs(CS.out.steeringAngle) < 90. and self.lkas_button_on
+    lkas_active = enabled and abs(CS.out.steeringAngle) < 90.
 
     # fix for Genesis hard fault at low speed
     if CS.out.vEgo < 60 * CV.KPH_TO_MS and self.car_fingerprint == CAR.HYUNDAI_GENESIS and not CS.mdps_bus:
       lkas_active = 0
-
-    # Disable steering while turning blinker on and speed below 60 kph
-    if CS.out.leftBlinker or CS.out.rightBlinker:
-      if self.car_fingerprint not in [CAR.KIA_OPTIMA, CAR.KIA_OPTIMA_H]:
-        self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
-      elif CS.left_blinker_flash or CS.right_blinker_flash: # Optima has blinker flash signal only
-        self.turning_signal_timer = 100
-    if self.turning_indicator_alert: # set and clear by interface
-      lkas_active = 0
-    if self.turning_signal_timer > 0:
-      self.turning_signal_timer -= 1
 
     if not lkas_active:
       apply_steer = 0
@@ -168,9 +152,8 @@ class CarController():
        self.update_live = True
 
     sys_warning, sys_state, left_lane_warning, right_lane_warning =\
-      process_hud_alert(lkas_active, self.car_fingerprint, visual_alert,
-                        left_lane, right_lane, left_lane_depart, right_lane_depart,
-                        self.lkas_button_on)
+      process_hud_alert(enabled, self.car_fingerprint, visual_alert,
+                        left_lane, right_lane, left_lane_depart, right_lane_depart)
 
     clu11_speed = CS.clu11["CF_Clu_Vanz"]
     enabled_speed = 38 if CS.is_set_speed_in_mph  else 60
