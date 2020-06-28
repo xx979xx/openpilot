@@ -83,7 +83,7 @@ class LongControl():
 
     self.op_params = opParams()
     self.enable_dg = self.op_params.get('dynamic_gas', True)
-    self.dynamic_gas = DynamicGas(CP, CAR_HYUNDAI.GENESIS)
+    self.dynamic_gas = DynamicGas(CP, CAR_HYUNDAI)
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
