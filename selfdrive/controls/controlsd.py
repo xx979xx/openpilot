@@ -574,8 +574,8 @@ class Controls:
       self.prof.display()
 
 def main(sm=None, pm=None, logcan=None, sm_smiskol=None):
-  controls = Controls(sm, pm, logcan, sm_smiskol)
-  controls.controlsd_thread()
+  controls = Controls(sm, pm, logcan)
+  controls.controlsd_thread(sm_smiskol)
 
 
 if __name__ == "__main__":
