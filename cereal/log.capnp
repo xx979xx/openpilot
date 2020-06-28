@@ -1976,6 +1976,15 @@ struct Sentinel {
   type @0 :SentinelType;
 }
 
+struct DynamicFollowData {
+  mpcTR @0 :Float32;
+  profilePred @1 :UInt16;
+}
+
+struct DynamicFollowButton {
+  status @0 :UInt16;
+}
+
 struct Event {
   # in nanoseconds?
   logMonoTime @0 :UInt64;
@@ -2054,5 +2063,8 @@ struct Event {
     dMonitoringState @71: DMonitoringState;
     liveLocationKalman @72 :LiveLocationKalman;
     sentinel @73 :Sentinel;
+
+    dynamicFollowData @74 :DynamicFollowData;
+    dynamicFollowButton @75 :DynamicFollowButton;
   }
 }
