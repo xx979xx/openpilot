@@ -174,8 +174,8 @@ class CarState(CarStateBase):
       else:
         ret.gearShifter = GearShifter.unknown
 
-    ret.stockAeb = cp.vl["FCA11"]['FCA_CmdAct'] != 0
-    ret.stockFcw = cp.vl["FCA11"]['CF_VSM_Warn'] == 2
+#    ret.stockAeb = cp.vl["FCA11"]['FCA_CmdAct'] != 0
+#    ret.stockFcw = cp.vl["FCA11"]['CF_VSM_Warn'] == 2
     
     ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
     ret.rightBlindspot = cp.vl["LCA11"]["CF_Lca_IndRight"] != 0
