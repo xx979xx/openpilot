@@ -45,7 +45,7 @@ hide_auto_df_alerts = op_params.get('hide_auto_df_alerts', False)
 
 
 class Controls:
-  def __init__(self, sm=None, pm=None, can_sock=None):
+  def __init__(self, sm=None, pm=None, can_sock=None, sm_smiskol=None):
     gc.disable()
     set_realtime_priority(53)
     set_core_affinity(3)
@@ -60,6 +60,10 @@ class Controls:
     if self.sm is None:
       self.sm = messaging.SubMaster(['thermal', 'health', 'frame', 'model', 'liveCalibration',
                                      'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman'])
+
+    self.sm_smiskol = sm_smiskol
+    if self.sm_smiskol is None:
+      self.sm_smiskol = messaging.SubMaster(['radarState', 'dynamicFollowData', 'liveTracks', 'dynamicFollowButton'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -347,7 +351,7 @@ class Controls:
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
 
-  def state_control(self, CS):
+  def state_control(self, CS, sm_smiskol):
     """Given the state, this function returns an actuators packet"""
 
     plan = self.sm['plan']
@@ -540,7 +544,8 @@ class Controls:
     # copy CarControl to pass to CarInterface on the next iteration
     self.CC = CC
 
-  def step(self):
+  def step(self, sm_smiskol):
+    sm_smiskol.update(0)
     start_time = sec_since_boot()
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
@@ -556,7 +561,7 @@ class Controls:
       self.prof.checkpoint("State transition")
 
     # Compute actuators (runs PID loops and lateral MPC)
-    actuators, v_acc, a_acc, lac_log = self.state_control(CS)
+    actuators, v_acc, a_acc, lac_log = self.state_control(CS, sm_smiskol)
 
     self.prof.checkpoint("State Control")
 
@@ -564,17 +569,14 @@ class Controls:
     self.publish_logs(CS, start_time, actuators, v_acc, a_acc, lac_log)
     self.prof.checkpoint("Sent")
 
-  def controlsd_thread(self, sm_smiskol=None):
-    if sm_smiskol is None:
-      sm_smiskol = messaging.SubMaster(['radarState', 'dynamicFollowData', 'liveTracks', 'dynamicFollowButton'])
+  def controlsd_thread(self):
     while True:
-      sm_smiskol.update(0)
       self.step()
       self.rk.monitor_time()
       self.prof.display()
 
-def main(sm=None, pm=None, logcan=None):
-  controls = Controls(sm, pm, logcan)
+def main(sm=None, pm=None, logcan=None, sm_smiskol=None):
+  controls = Controls(sm, pm, logcan, sm_smiskol)
   controls.controlsd_thread()
 
 
