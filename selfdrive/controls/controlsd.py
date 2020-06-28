@@ -111,7 +111,7 @@ class Controls:
     self.AM = AlertManager()
     self.events = Events()
 
-    self.LoC = LongControl(self.CP, self.CI.compute_gb)
+    self.LoC = LongControl(self.CP, self.CI.compute_gb, candidate)
     self.VM = VehicleModel(self.CP)
 
     if self.CP.lateralTuning.which() == 'pid':
