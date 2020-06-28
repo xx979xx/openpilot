@@ -90,7 +90,7 @@ class PIController:
 
 
 class PIDController:
-  def __init__(self, k_p, k_i, k_d, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
+  def __init__(self, k_p, k_i, k_d, k_f=.75, pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
     self.enable_long_derivative = False
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
@@ -156,7 +156,7 @@ class PIDController:
       self.id -= self.i_unwind_rate * float(np.sign(self.id))
     else:
       i = self.id + error * self.k_i * self.rate
-      if (self.last_error != error) and error == 0. and i > 0.:
+      if self.last_error > 0. and error >= 0. and i > 0.:
         i = 0.
       control = self.p + self.f + i
 
