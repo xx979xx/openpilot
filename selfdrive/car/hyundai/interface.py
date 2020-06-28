@@ -233,10 +233,12 @@ class CarInterface(CarInterfaceBase):
     ret.cruiseState.enabled = ret.cruiseState.available
 
     # turning indicator alert logic
-    if (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < LANE_CHANGE_SPEED_MIN - 1.2:
-      self.CC.turning_indicator_alert = True 
-    else:
+    if (ret.leftBlinker or ret.rightBlinker) and ret.vEgo < 10.:
+      self.CC.turning_indicator_alert = True
+    elif (not ret.leftBlinker and not ret.rightBlinker) or ret.vEgo > 11.2 or ret.standStill:
       self.CC.turning_indicator_alert = False
+
+    self.CC.turning_indicator_alert = False
 
     ret.spasTarget = self.CC.target
 
