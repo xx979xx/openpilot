@@ -235,7 +235,7 @@ class CarInterface(CarInterfaceBase):
     # turning indicator alert logic
     if (ret.leftBlinker or ret.rightBlinker) and ret.vEgo < 10.:
       self.CC.turning_indicator_alert = True
-    elif (not ret.leftBlinker and not ret.rightBlinker) or ret.vEgo > 11.2 or ret.standStill:
+    elif (not ret.leftBlinker and not ret.rightBlinker) or ret.vEgo > 11.2 or ret.standstill:
       self.CC.turning_indicator_alert = False
 
     self.CC.turning_indicator_alert = False

@@ -116,9 +116,9 @@ class CarController():
       apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady)
       if not self.lead_visible:
         accel_dyn_min = -0.5
-      elif (CS.Vrel_radar < 0.) and (3. < CS.lead_distance < 140.) and not self.visionbrakestart:
-        accel_dyn_min = ((square(CS.out.vEgo + CS.Vrel_radar) - square(CS.out.vEgo))/(2 * max(.1, (CS.lead_distance - follow_distance))))
-        accel_dyn_min = clip(accel_dyn_min, ACCEL_MIN, -0.5)
+  #    elif (CS.Vrel_radar < 0.) and (3. < CS.lead_distance < 140.) and not self.visionbrakestart:
+  #      accel_dyn_min = ((square(CS.out.vEgo + CS.Vrel_radar) - square(CS.out.vEgo))/(2 * max(.1, (CS.lead_distance - follow_distance))))
+  #      accel_dyn_min = clip(accel_dyn_min, ACCEL_MIN, -0.5)
       else:
         accel_dyn_min = ACCEL_MIN
         if apply_accel < (-0.5 / ACCEL_SCALE):
