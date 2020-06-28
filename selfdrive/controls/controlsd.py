@@ -347,7 +347,7 @@ class Controls:
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
 
-  def state_control(self, CS, sm_smiskol):
+  def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""
 
     plan = self.sm['plan']
