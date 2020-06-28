@@ -147,7 +147,7 @@ class PIDController:
   def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
 
-    error = float(apply_deadzone(setpoint - measurement, deadzone))
+    error = float(apply_deadzone((setpoint-0.4) - measurement, deadzone))
 
     self.p = error * self.k_p
     self.f = feedforward * self.k_f
@@ -156,6 +156,8 @@ class PIDController:
       self.id -= self.i_unwind_rate * float(np.sign(self.id))
     else:
       i = self.id + error * self.k_i * self.rate
+      if (self.last_error != error) and error == 0. and i > 0.:
+        i = 0.
       control = self.p + self.f + i
 
       if self.convert is not None:
