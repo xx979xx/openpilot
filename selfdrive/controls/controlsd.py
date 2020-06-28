@@ -76,7 +76,7 @@ class Controls:
     print("Waiting for CAN messages...")
     messaging.get_one_can(self.can_sock)
 
-    self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], has_relay)
+    self.CI, self.CP, self.candidate = get_car(self.can_sock, self.pm.sock['sendcan'], has_relay)
 
     # read params
     params = Params()
@@ -111,7 +111,7 @@ class Controls:
     self.AM = AlertManager()
     self.events = Events()
 
-    self.LoC = LongControl(self.CP, self.CI.compute_gb, candidate)
+    self.LoC = LongControl(self.CP, self.CI.compute_gb, self.candidate)
     self.VM = VehicleModel(self.CP)
 
     if self.CP.lateralTuning.which() == 'pid':
