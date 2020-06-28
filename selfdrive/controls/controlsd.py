@@ -22,8 +22,7 @@ from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.planner import LON_MPC_STEP
 from selfdrive.locationd.calibration_helpers import Calibration
-from selfdrive.controls.lib.dynamic_follow.df_manager import dfManager
-from common.op_params import opParams
+
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
 STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
@@ -38,14 +37,9 @@ LaneChangeState = log.PathPlan.LaneChangeState
 LaneChangeDirection = log.PathPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 
-op_params = opParams()
-df_manager = dfManager(op_params)
-hide_auto_df_alerts = op_params.get('hide_auto_df_alerts', False)
-
-
 
 class Controls:
-  def __init__(self, sm=None, pm=None, can_sock=None, sm_smiskol=None):
+  def __init__(self, sm=None, pm=None, can_sock=None):
     gc.disable()
     set_realtime_priority(53)
     set_core_affinity(3)
@@ -60,10 +54,6 @@ class Controls:
     if self.sm is None:
       self.sm = messaging.SubMaster(['thermal', 'health', 'frame', 'model', 'liveCalibration',
                                      'dMonitoringState', 'plan', 'pathPlan', 'liveLocationKalman'])
-
-    self.sm_smiskol = sm_smiskol
-    if self.sm_smiskol is None:
-      self.sm_smiskol = messaging.SubMaster(['radarState', 'dynamicFollowData', 'liveTracks', 'dynamicFollowButton'])
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -356,7 +346,6 @@ class Controls:
 
     plan = self.sm['plan']
     path_plan = self.sm['pathPlan']
-    sm_smiskol = self.sm_smiskol
 
     actuators = car.CarControl.Actuators.new_message()
 
@@ -367,7 +356,7 @@ class Controls:
 
     if not self.active:
       self.LaC.reset()
-      self.LoC.reset(v_pid=plan.vTargetFuture)
+      self.LoC.reset(v_pid=CS.vEgo)
 
     plan_age = DT_CTRL * (self.sm.frame - self.sm.rcv_frame['plan'])
     # no greater than dt mpc + dt, to prevent too high extraps
@@ -376,11 +365,8 @@ class Controls:
     a_acc_sol = plan.aStart + (dt / LON_MPC_STEP) * (plan.aTarget - plan.aStart)
     v_acc_sol = plan.vStart + dt * (a_acc_sol + plan.aStart) / 2.0
 
-    extras_loc = {'lead_one': sm_smiskol['radarState'].leadOne, 'mpc_TR': sm_smiskol['dynamicFollowData'].mpcTR,
-                  'live_tracks': sm_smiskol['liveTracks'], 'has_lead': plan.hasLead, 'CS': CS}
-
     # Gas/Brake PID loop
-    actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, plan.vTargetFuture, a_acc_sol, self.CP, extras_loc)
+    actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, plan.vTargetFuture, a_acc_sol, self.CP)
     # Steering PID loop and lateral MPC
     actuators.steer, actuators.steerAngle, lac_log = self.LaC.update(self.active, CS, self.CP, path_plan)
 
@@ -492,7 +478,7 @@ class Controls:
     controlsState.vPid = float(self.LoC.v_pid)
     controlsState.vCruise = float(self.v_cruise_kph)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
-    controlsState.uiAccelCmd = float(self.LoC.pid.id)
+    controlsState.uiAccelCmd = float(self.LoC.pid.i)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
     controlsState.angleSteersDes = float(self.LaC.angle_steers_des)
     controlsState.vTargetLead = float(v_acc)
@@ -546,7 +532,6 @@ class Controls:
     self.CC = CC
 
   def step(self):
-    self.sm_smiskol.update(0)
     start_time = sec_since_boot()
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
@@ -576,8 +561,8 @@ class Controls:
       self.rk.monitor_time()
       self.prof.display()
 
-def main(sm=None, pm=None, logcan=None, sm_smiskol=None):
-  controls = Controls(sm, pm, logcan, sm_smiskol)
+def main(sm=None, pm=None, logcan=None):
+  controls = Controls(sm, pm, logcan)
   controls.controlsd_thread()
 
 
