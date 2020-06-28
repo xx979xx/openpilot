@@ -544,8 +544,8 @@ class Controls:
     # copy CarControl to pass to CarInterface on the next iteration
     self.CC = CC
 
-  def step(self, sm_smiskol):
-    sm_smiskol.update(0)
+  def step(self):
+    self.sm_smiskol.update(0)
     start_time = sec_since_boot()
     self.prof.checkpoint("Ratekeeper", ignore=True)
 
