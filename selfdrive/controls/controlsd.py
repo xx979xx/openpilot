@@ -573,9 +573,9 @@ class Controls:
       self.rk.monitor_time()
       self.prof.display()
 
-def main(sm=None, pm=None, logcan=None, sm_smiskol=None):
+def main(sm=None, pm=None, logcan=None):
   controls = Controls(sm, pm, logcan)
-  controls.controlsd_thread(sm_smiskol)
+  controls.controlsd_thread()
 
 
 if __name__ == "__main__":
