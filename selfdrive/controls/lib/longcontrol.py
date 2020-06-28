@@ -1,5 +1,6 @@
 from cereal import log
 from common.numpy_fast import clip, interp
+from helper_scripts.dg_test import CAR_HYUNDAI
 from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.dynamic_gas import DynamicGas
 from common.op_params import opParams
@@ -62,7 +63,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
 
 
 class LongControl():
-  def __init__(self, CP, compute_gb, candidate):
+  def __init__(self, CP, compute_gb):
     self.long_control_state = LongCtrlState.off  # initialized to off
 
     kdBP = [0., 16., 35.]
@@ -82,7 +83,7 @@ class LongControl():
 
     self.op_params = opParams()
     self.enable_dg = self.op_params.get('dynamic_gas', True)
-    self.dynamic_gas = DynamicGas(CP, candidate)
+    self.dynamic_gas = DynamicGas(CP, CAR_HYUNDAI.GENESIS)
 
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""

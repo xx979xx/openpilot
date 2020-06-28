@@ -4,6 +4,7 @@ from common.numpy_fast import clip, interp
 from selfdrive.config import Conversions as CV
 CAR_TOYOTA = ['Corolla']
 CAR_HONDA = []
+CAR_HYUNDAI = []
 
 class CarParams:
   enableGasInterceptor = True
