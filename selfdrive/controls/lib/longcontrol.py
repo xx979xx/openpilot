@@ -62,10 +62,15 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
 
 
 class LongControl():
-  def __init__(self, CP, compute_gb):
+  def __init__(self, CP, compute_gb, candidate):
     self.long_control_state = LongCtrlState.off  # initialized to off
+
     kdBP = [0., 16., 35.]
-    kdV = [0.08, 1.215, 2.51]
+    if CP.enableGasInterceptor:
+      kdV = [0.05, 1.0285, 1.8975]
+    else:
+      kdV = [0.08, 1.215, 2.51]
+
     self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
                              (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                              (kdBP, kdV),
@@ -75,17 +80,24 @@ class LongControl():
     self.v_pid = 0.0
     self.last_output_gb = 0.0
 
+    self.op_params = opParams()
+    self.enable_dg = self.op_params.get('dynamic_gas', True)
+    self.dynamic_gas = DynamicGas(CP, candidate)
+
   def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, CS, v_target, v_target_future, a_target, CP):
+  def update(self, active, CS, v_target, v_target_future, a_target, CP, extras):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Actuation limits
     gas_max = interp(CS.vEgo, CP.gasMaxBP, CP.gasMaxV)
     brake_max = interp(CS.vEgo, CP.brakeMaxBP, CP.brakeMaxV)
     stop_decel = interp(CS.vEgo, BRAKE_STOPPING_TARGET_BP, BRAKE_STOPPING_TARGET_D)
+
+    if self.enable_dg:
+      gas_max = self.dynamic_gas.update(v_ego, extras)
 
     # Update state machine
     output_gb = self.last_output_gb
@@ -97,7 +109,7 @@ class LongControl():
 
     v_ego_pid = max(CS.vEgo, MIN_CAN_SPEED)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
 
-    if self.long_control_state == LongCtrlState.off:
+    if self.long_control_state == LongCtrlState.off or extras['CS'].gasPressed:
       self.v_pid = v_ego_pid
       self.pid.reset()
       output_gb = 0.
@@ -139,4 +151,4 @@ class LongControl():
     final_gas = clip(output_gb, 0., gas_max)
     final_brake = -clip(output_gb, -brake_max, 0.)
 
-    return final_gas, final_brake
+    return float(final_gas), float(final_brake)
