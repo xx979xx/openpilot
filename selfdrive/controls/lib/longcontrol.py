@@ -98,7 +98,7 @@ class LongControl():
     stop_decel = interp(CS.vEgo, BRAKE_STOPPING_TARGET_BP, BRAKE_STOPPING_TARGET_D)
 
     if self.enable_dg:
-      gas_max = self.dynamic_gas.update(v_ego, extras)
+      gas_max = self.dynamic_gas.update(CS.vEgo, extras)
 
     # Update state machine
     output_gb = self.last_output_gb
