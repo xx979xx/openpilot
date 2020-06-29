@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpBP = [0., 5., 35.]
     ret.longitudinalTuning.kpV = [.85, .65, .65]
     ret.longitudinalTuning.kiBP = [0., 15., 35.]
-    ret.longitudinalTuning.kiV = [.065, .05, .05]
+    ret.longitudinalTuning.kiV = [.08, .075, .065]
     ret.longitudinalTuning.deadzoneBP = [0., .5,  5.,  40.]
     ret.longitudinalTuning.deadzoneV = [0.00, 0.0, 0.12, 0.15]
     ret.gasMaxBP = [0., 1., 1.1, 15., 40.]
@@ -64,7 +64,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[9., 22.], [9., 22.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2, 0.35], [0.05, 0.09]]
     elif candidate == CAR.SONATA:
-      ret.steermaxLimit = 409  # stock
+      ret.steermaxLimit = 409
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1513. + STD_CARGO_KG
       ret.wheelbase = 2.84
@@ -80,7 +80,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.PALISADE:
-      ret.steermaxLimit = 409  # stock
+      ret.steermaxLimit = 409
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 1999. + STD_CARGO_KG
       ret.wheelbase = 2.90
@@ -95,7 +95,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate in [CAR.ELANTRA, CAR.ELANTRA_GT_I30]:
-      ret.steermaxLimit = 409  # stock
+      ret.steermaxLimit = 409
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
@@ -105,7 +105,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
       ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.HYUNDAI_GENESIS:
-      ret.steermaxLimit = 409  # stock
+      ret.steermaxLimit = 409
       ret.lateralTuning.pid.kf = 0.00005
       ret.steerActuatorDelay = 0.4
       ret.mass = 2060. + STD_CARGO_KG
@@ -117,7 +117,7 @@ class CarInterface(CarInterfaceBase):
       #ret.minSteerSpeed = 60 * CV.KPH_TO_MS # check for MDPS harness present
 
     elif candidate == CAR.GENESIS_G80:
-      ret.steermaxLimit = 409  # stock
+      ret.steermaxLimit = 409
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
@@ -125,7 +125,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
     elif candidate == CAR.GENESIS_G90:
-      ret.steermaxLimit = 409  # stock
+      ret.steermaxLimit = 409
       ret.mass = 2200
       ret.wheelbase = 3.15
       ret.steerRatio = 12.069
@@ -233,16 +233,14 @@ class CarInterface(CarInterfaceBase):
     ret.cruiseState.enabled = ret.cruiseState.available
 
     # turning indicator alert logic
-    if (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < LANE_CHANGE_SPEED_MIN - 1.2:
-      self.CC.turning_indicator_alert = True 
-    else:
+    if (ret.leftBlinker or ret.rightBlinker) and ret.vEgo < 10.:
+      self.CC.turning_indicator_alert = True
+    elif (not ret.leftBlinker and not ret.rightBlinker) or ret.vEgo > 11.2 or ret.standstill:
       self.CC.turning_indicator_alert = False
 
+    self.CC.turning_indicator_alert = False
+
     ret.spasTarget = self.CC.target
-    # LKAS button alert logic: reverse on/off
-    #if not self.CS.lkas_error and self.CS.lkas_button_on != self.CS.prev_lkas_button_on:
-      #self.CC.lkas_button_on = not self.CC.lkas_button_on
-      #self.lkas_button_alert = not self.CC.lkas_button_on
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
     if ret.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
@@ -297,12 +295,10 @@ class CarInterface(CarInterfaceBase):
         if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and b.pressed and self.CS.cruiseStateavailable:
           events.add(EventName.buttonEnable)
           self.countenable += 1
-          print("enable counter:~~~~~~~~", self.countenable)
         # do disable on button down
         if b.type == ButtonType.cancel and b.pressed:
           events.add(EventName.buttonCancel)
         if b.type == ButtonType.altButton3 and b.pressed:
-          print("this?????????:~~~~~~~~", self.countenable)
           events.add(EventName.pcmDisable)
       if EventName.wrongCarMode in events.events:
         events.events.remove(EventName.wrongCarMode)
@@ -310,6 +306,7 @@ class CarInterface(CarInterfaceBase):
         events.events.remove(EventName.pcmDisable)
 
     ret.events = events.to_msg()
+
     self.CS.out = ret.as_reader()
     return self.CS.out
 

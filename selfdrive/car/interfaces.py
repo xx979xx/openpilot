@@ -113,8 +113,8 @@ class CarInterfaceBase():
       events.add(EventName.brakeHold)
     if cs_out.parkBrake:
       events.add(EventName.parkBrake)
-    #if cs_out.cruiseState.nonAdaptive:
-    #  events.add(EventName.wrongCruiseMode)
+    if cs_out.cruiseState.nonAdaptive:
+      events.add(EventName.wrongCruiseMode)
 
     if cs_out.steerError:
       events.add(EventName.steerUnavailable)

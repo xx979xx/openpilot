@@ -93,7 +93,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     driverMonitorLowAcc @68;
     invalidLkasSetting @69;
     speedTooHigh @70;
-    laneChangeBlockedDEPRECATED @71;
+    laneChangeBlocked @71;
     relayMalfunction @72;
     gasPressed @73;
     stockFcw @74;
@@ -111,11 +111,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     focusRecoverActive @86;
     wrongCruiseMode @87;
     neosUpdateRequired @88;
-    preventLaneChange @89;
-    leftBlindspot @90;
-    rightBlindspot @91;
-    turningIndicatorOn @92;
-    lkasButtonOff @93;
+    turningIndicatorOn @89;
+    lkasButtonOff @90;
   }
 }
 

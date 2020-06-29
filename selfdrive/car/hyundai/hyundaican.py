@@ -62,6 +62,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
 
   return packer.make_can_msg("LKAS11", bus, values)
 
+
 def create_clu11(packer, frame, bus, clu11, button, speed):
   values = clu11
 
@@ -137,7 +138,8 @@ def create_scc11(packer, frame, enabled, set_speed, lead_visible, standstill, sc
   values["AliveCounterACC"] = frame // 2 % 0x10
   if enabled:
     values["VSetDis"] = set_speed
-#  values["SCCInfoDisplay"] = 4 if standstill  else 0 tie to long control state = stopping
+  if standstill:
+    values["SCCInfoDisplay"] = 0
   values["DriverAlertDisplay"] = 0
   values["ObjValid"] = lead_visible
   values["ACC_ObjStatus"] = lead_visible
