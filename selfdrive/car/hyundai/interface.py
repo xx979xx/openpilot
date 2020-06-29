@@ -108,11 +108,12 @@ class CarInterface(CarInterfaceBase):
       ret.steermaxLimit = 409
       ret.lateralTuning.pid.kf = 0.00005
       ret.steerActuatorDelay = 0.4
+      ret.steerRateCost = 0.45
       ret.mass = 2060. + STD_CARGO_KG
       ret.wheelbase = 3.01
       ret.steerRatio = 16.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13], [0.005]]
 
       #ret.minSteerSpeed = 60 * CV.KPH_TO_MS # check for MDPS harness present
 
