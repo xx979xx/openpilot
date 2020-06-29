@@ -156,7 +156,7 @@ class PIDController:
       self.id -= self.i_unwind_rate * float(np.sign(self.id))
     else:
       i = self.id + error * self.k_i * self.rate
-      if self.last_error > 0. and error >= 0. and i > 0.:
+      if self.last_error > 0. and error <= 0. and i > 0.:
         i = 0.
       control = self.p + self.f + i
 
