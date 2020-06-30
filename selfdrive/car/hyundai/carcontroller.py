@@ -221,7 +221,8 @@ class CarController():
       print('SPAS ON')
       self.op_spas_state = 0  # SPAS enabled
 
-    if self.op_spas_state == 0 and (CS.prev_spas_hmi_state != 18 and CS.spas_hmi_state == 18 or
+    if self.op_spas_state == 0 and (CS.prev_spas_hmi_state != 17 and CS.spas_hmi_state == 17 or
+                                    CS.prev_spas_hmi_state != 18 and CS.spas_hmi_state == 18 or
                                     CS.prev_spas_hmi_state != 19 and CS.spas_hmi_state == 19 or
                                     CS.prev_spas_hmi_state != 20 and CS.spas_hmi_state == 20):
                                     #CS.prev_spas_hmi_state != 40 and CS.spas_hmi_state == 40):
