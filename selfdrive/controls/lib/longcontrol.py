@@ -33,7 +33,7 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
 
   starting_condition = v_target > STARTING_TARGET_SPEED # and not cruise_standstill
 
-  if (not active) or ((brake_pressed or gas_pressed or avh_active) and not spas_on):
+  if (not active) or brake_pressed or gas_pressed or (avh_active and not spas_on):
     long_control_state = LongCtrlState.off
 
   else:
