@@ -349,7 +349,7 @@ class CarController():
          #self.target = min(self.target, CS.out.vEgo + 0.14)
           self.target = min(self.target, self.prev_target + 0.01)
         else:
-          self.target = clip(self.prev_target + 0.005, .8, 3.3)
+          self.target = clip(self.prev_target + 0.005, .0, 1.6)
 
         if self.gear_shift != self.prev_gear_shift or self.gear_shift == GearShifter.neutral:
           self.target = 0.
