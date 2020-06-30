@@ -183,7 +183,7 @@ class CarState(CarStateBase):
     self.prev_spas_hmi_state = self.spas_hmi_state
     self.spas_hmi_state = cp_cam.vl["SPAS12"]["CF_Spas_HMI_Stat"]
     self.prev_spasOn = self.spasOn
-    self.spasOn = cp_cam.vl["SPAS12"]["CF_Spas_Disp"] > 0
+    self.spasOn = cp_cam.vl["SPAS12"]["CF_Spas_Disp"] > 1
 
     if not self.spasOn and self.prev_spasOn:
       self.spasOn = False if ret.gearShifter == GearShifter.park or ret.gasPressed or ret.brakePressed else True
