@@ -101,7 +101,7 @@ class CarState(CarStateBase):
 
     if ret.cruiseState.enabled:
 #      is_set_speed_in_mph = int(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
-      speed_conv = CV.MPH_TO_MS if is_set_speed_in_mph else CV.KPH_TO_MS
+      speed_conv = CV.MPH_TO_MS if self.is_set_speed_in_mph else CV.KPH_TO_MS
       ret.cruiseState.speed = cp.vl["SCC11"]['VSetDis'] * speed_conv
     else:
       ret.cruiseState.speed = 0
@@ -183,7 +183,7 @@ class CarState(CarStateBase):
     self.prev_spas_hmi_state = self.spas_hmi_state
     self.spas_hmi_state = cp_cam.vl["SPAS12"]["CF_Spas_HMI_Stat"]
     self.prev_spasOn = self.spasOn
-    self.spasOn = cp_cam.vl["SPAS12"]["CF_Spas_Disp"] > 0
+    self.spasOn = cp_cam.vl["SPAS12"]["CF_Spas_Disp"] > 1
 
     if not self.spasOn and self.prev_spasOn:
       self.spasOn = False if ret.gearShifter == GearShifter.park or ret.gasPressed or ret.brakePressed else True
