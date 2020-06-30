@@ -109,6 +109,8 @@ class CarController():
     apply_accel = actuators.gas - actuators.brake
     follow_distance = max(4., (CS.out.vEgo * .4))
 
+    accel_dyn_min = ACCEL_MIN
+
     if(apply_accel >= 0.):
       self.visionbrakestart = False
 
@@ -120,7 +122,6 @@ class CarController():
   #      accel_dyn_min = ((square(CS.out.vEgo + CS.Vrel_radar) - square(CS.out.vEgo))/(2 * max(.1, (CS.lead_distance - follow_distance))))
   #      accel_dyn_min = clip(accel_dyn_min, ACCEL_MIN, -0.5)
       else:
-        accel_dyn_min = ACCEL_MIN
         if apply_accel < (-0.5 / ACCEL_SCALE):
           self.visionbrakestart = True
 
