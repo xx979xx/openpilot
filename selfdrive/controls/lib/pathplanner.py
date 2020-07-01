@@ -114,7 +114,7 @@ class PathPlanner():
     else:
 
       blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
-                            (sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left))
+                            (sm['carState'].rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
 
       if not blindspot_detected:
         self.pre_auto_LCA_timer += DT_MDL
