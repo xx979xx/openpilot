@@ -199,7 +199,7 @@ class CarController():
     if frame % 2 and CS.mdps_bus == 1: # send clu11 to mdps if it is not on bus 0
       can_sends.append(create_clu11(self.packer, frame, CS.mdps_bus, CS.clu11, Buttons.NONE, enabled_speed))
 
-    if pcm_cancel_cmd and self.longcontrol:
+    if pcm_cancel_cmd and not self.longcontrol:
       can_sends.append(create_clu11(self.packer, frame, CS.scc_bus, CS.clu11, Buttons.CANCEL, clu11_speed))
     elif CS.mdps_bus: # send mdps12 to LKAS to prevent LKAS error if no cancel cmd
       can_sends.append(create_mdps12(self.packer, frame, CS.mdps12))
@@ -342,14 +342,16 @@ class CarController():
     if self.op_spas_speed_control:
       if not CS.out.gasPressed and not self.gear_shift == GearShifter.park:
         if not CS.out.standstill:
-          if self.target >= 1.6:
-            self.target = .6
+          if abs(CS.out.steeringAngle) > 100. and CS.out.vEgo < 0.3:
+            self.target = 3.6
+          elif self.target >= 2.:
+            self.target = 2.
           else:
-            self.target = 1.5
+            self.target = 2.
          #self.target = min(self.target, CS.out.vEgo + 0.14)
-          self.target = min(self.target, self.prev_target + 0.01)
+          self.target = min(self.target, self.prev_target + 0.03)
         else:
-          self.target = 3.
+          self.target = 3.6
 
         if self.gear_shift != self.prev_gear_shift or self.gear_shift == GearShifter.neutral:
           self.target = 0.
