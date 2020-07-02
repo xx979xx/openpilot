@@ -342,16 +342,18 @@ class CarController():
     if self.op_spas_speed_control:
       if not CS.out.gasPressed and not self.gear_shift == GearShifter.park:
         if not CS.out.standstill:
-          if abs(CS.out.steeringAngle) > 100. and CS.out.vEgo < 0.3:
-            self.target = 3.6
-          elif self.target >= 2.:
+          if CS.out.vEgo < 0.4:
+            self.target = 3.2
+            self.target = min(self.target, self.prev_target + 0.03)
+          elif self.target > 2.5:
             self.target = 2.
-          else:
-            self.target = 2.
+            self.target = max(self.target, self.prev_target - 0.03)
+          elif self.target <= 2.:
+            self.target = 2.5
+            self.target = min(self.target, self.prev_target + 0.03)
          #self.target = min(self.target, CS.out.vEgo + 0.14)
-          self.target = min(self.target, self.prev_target + 0.03)
         else:
-          self.target = 3.6
+          self.target = 3.2
 
         if self.gear_shift != self.prev_gear_shift or self.gear_shift == GearShifter.neutral:
           self.target = 0.
