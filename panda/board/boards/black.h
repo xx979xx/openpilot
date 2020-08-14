@@ -100,6 +100,7 @@ void black_set_esp_gps_mode(uint8_t mode) {
 }
 
 void black_set_can_mode(uint8_t mode){
+  mode = CAN_MODE_OBD_CAN2;
   switch (mode) {
     case CAN_MODE_NORMAL:
     case CAN_MODE_OBD_CAN2:
@@ -207,7 +208,7 @@ void black_init(void) {
   }
 
   // init multiplexer
-  can_set_obd(car_harness_status, false);
+  can_set_obd(car_harness_status, true);
 }
 
 const harness_configuration black_harness_config = {
