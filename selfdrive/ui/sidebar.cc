@@ -67,7 +67,8 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   nvgTextBox(s->vg, network_x, network_y, network_w, network_type ? network_type : "--", NULL);
 
   network_y += 50;
-  nvgTextBox(s->vg, network_x-20, network_y + 55, 250, s->scene.thermal.getWifiIpAddress().c_str());
+  std::string ip = s->scene.thermal.getWifiIpAddress();
+  nvgTextBox(s->vg, network_x-20, network_y + 55, 250, ip.c_str(), NULL);
 }
 
 static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char* value_str, const int severity, const int y_offset, const char* message_str) {
@@ -115,25 +116,6 @@ static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char
   }
 }
 
-static void ui_draw_sidebar_temp_metric(UIState *s) {
-  static std::map<cereal::ThermalData::ThermalStatus, const int> temp_severity_map = {
-      {cereal::ThermalData::ThermalStatus::GREEN, 0},
-      {cereal::ThermalData::ThermalStatus::YELLOW, 1},
-      {cereal::ThermalData::ThermalStatus::RED, 2},
-      {cereal::ThermalData::ThermalStatus::DANGER, 3}};
-  char temp_label_str[32];
-  char temp_value_str[32];
-  char temp_value_unit[32];
-  const int temp_y_offset = 45;
-  snprintf(temp_value_str, sizeof(temp_value_str), "%d", s->scene.thermal.getPa0());
-  snprintf(temp_value_unit, sizeof(temp_value_unit), "%s", "°C");
-  //snprintf(temp_label_str, sizeof(temp_label_str), "%s", "TEMP");
-  temp_label_str[0] = 0;
-  strcat(temp_value_str, temp_value_unit);
-
-  ui_draw_sidebar_metric2(s, temp_severity_map[s->scene.thermal.getThermalStatus()], temp_y_offset, temp_value_str);
-}
-
 static void ui_draw_sidebar_metric2(UIState *s, const int severity, const int y_offset, const char* message_str) {
   const int metric_x = !s->scene.uilayout_sidebarcollapsed ? 30 : -(sbr_w);
   const int metric_y = 338 + y_offset;
@@ -164,6 +146,27 @@ static void ui_draw_sidebar_metric2(UIState *s, const int severity, const int y_
     nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
     nvgTextBox(s->vg, metric_x + 35, metric_y + (strchr(message_str, '\n') ? 40 : 50), metric_w - 50, message_str, NULL);
 }
+
+static void ui_draw_sidebar_temp_metric(UIState *s) {
+  static std::map<cereal::ThermalData::ThermalStatus, const int> temp_severity_map = {
+      {cereal::ThermalData::ThermalStatus::GREEN, 0},
+      {cereal::ThermalData::ThermalStatus::YELLOW, 1},
+      {cereal::ThermalData::ThermalStatus::RED, 2},
+      {cereal::ThermalData::ThermalStatus::DANGER, 3}};
+  char temp_label_str[32];
+  char temp_value_str[32];
+  char temp_value_unit[32];
+  const int temp_y_offset = 45;
+  snprintf(temp_value_str, sizeof(temp_value_str), "%d", s->scene.thermal.getPa0());
+  snprintf(temp_value_unit, sizeof(temp_value_unit), "%s", "°C");
+  //snprintf(temp_label_str, sizeof(temp_label_str), "%s", "TEMP");
+  temp_label_str[0] = 0;
+  strcat(temp_value_str, temp_value_unit);
+
+  ui_draw_sidebar_metric2(s, temp_severity_map[s->scene.thermal.getThermalStatus()], temp_y_offset, temp_value_str);
+}
+
+
 
 static void ui_draw_sidebar_panda_metric(UIState *s) {
   int panda_severity = 2;
