@@ -57,7 +57,7 @@ static void ui_draw_sidebar_network_type(UIState *s) {
       {cereal::ThermalData::NetworkType::CELL4_G, "4G"},
       {cereal::ThermalData::NetworkType::CELL5_G, "5G"}};
   const int network_x = 50;
-  const int network_y = 273;
+  int network_y = 273;
   const int network_w = 100;
   const char *network_type = network_type_map[s->scene.thermal.getNetworkType()];
   nvgFillColor(s->vg, COLOR_WHITE);
@@ -67,7 +67,7 @@ static void ui_draw_sidebar_network_type(UIState *s) {
   nvgTextBox(s->vg, network_x, network_y, network_w, network_type ? network_type : "--", NULL);
 
   network_y += 50;
-  nvgTextBox(s->vg, network_x-20, network_y + 55, 250, s->scene.thermal.getWifiIpAddress());
+  nvgTextBox(s->vg, network_x-20, network_y + 55, 250, s->scene.thermal.getWifiIpAddress().c_str());
 }
 
 static void ui_draw_sidebar_metric(UIState *s, const char* label_str, const char* value_str, const int severity, const int y_offset, const char* message_str) {
@@ -131,7 +131,7 @@ static void ui_draw_sidebar_temp_metric(UIState *s) {
   temp_label_str[0] = 0;
   strcat(temp_value_str, temp_value_unit);
 
-  ui_draw_sidebar_metric2(s, temp_severity_map[s->scene.thermalStatus], temp_y_offset, temp_value_str);
+  ui_draw_sidebar_metric2(s, temp_severity_map[s->scene.thermal.getThermalStatus()], temp_y_offset, temp_value_str);
 }
 
 static void ui_draw_sidebar_metric2(UIState *s, const int severity, const int y_offset, const char* message_str) {
