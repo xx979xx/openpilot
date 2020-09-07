@@ -286,6 +286,7 @@ struct ThermalData {
   networkType @22 :NetworkType;
   offroadPowerUsage @23 :UInt32;  # Power usage since going offroad in uWh
   networkStrength @24 :NetworkStrength;
+  wifiIpAddress @25 :Text;
 
   fanSpeed @10 :UInt16;
   started @11 :Bool;
