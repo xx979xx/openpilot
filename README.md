@@ -13,18 +13,22 @@ support:
 
 Installation:
 ------
-The best way to install this fork while keeping comma.ai files is the following:
+The best way to install this fork on comma.ai Openpilot repo is the following:
 - move to openpilot folder and add new remote, xx979xx e.g.:
 ```
 cd /data/openpilot
 git remote add xx979xx https://github.com/xx979xx/openpilot.git
 git fetch --all
 ```
-- To change branch to/from community:
+- To change branch to community:
 ```
-git checkout xx979xx/HKG_community
-git checkout origin/release2
+git checkout HKG_community
 ```
+- To change branch back to offical Openpilot release:
+```
+git checkout release2
+```
+
 - To update a branch:
 ```
 git pull
@@ -36,7 +40,7 @@ git reset xx979xx/HKG_community --hard
 
 Changes:
 ------
-- <b>  UI Toggles for community features:</b> you do not have to modify the code to enable/disable community features anymore, find the new toggels in Developer Settings.
+- <b>  UI Toggles for community features:</b> you do not have to modify the code to enable/disable community features anymore, find the new toggels in Developer Settings. Toggles take affect from next drive, if you are already driving, restart or disconnect your device will end the current drive.i.e.
 - <b>  HKG longitudinal control:</b> warrings: it is beta, be carful!! Openpilot will control the speed of your car, you can engage with cruise button.
 if your car has SCC on bus0 (CAN1) you have to disable it, otherwise this won't works.
 To enable long control, find the option under Developer Settings in your device.
