@@ -1,3 +1,5 @@
+import copy
+
 import crcmod
 from selfdrive.car.hyundai.values import CAR, CHECKSUM
 
@@ -8,7 +10,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
                   left_lane_depart, right_lane_depart, bus):
-  values = lkas11
+  values = copy.copy(lkas11)
   values["CF_Lkas_LdwsSysState"] = sys_state
   values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
   values["CF_Lkas_LdwsLHWarning"] = left_lane_depart
@@ -62,7 +64,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   return packer.make_can_msg("LKAS11", bus, values)
 
 def create_clu11(packer, frame, bus, clu11, button, speed):
-  values = clu11
+  values = copy.copy(clu11)
   values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_Vanz"] = speed
   values["CF_Clu_AliveCnt1"] = frame // 2 % 0x10
@@ -89,7 +91,7 @@ def create_lfa_mfa(packer, frame, enabled):
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
 def create_mdps12(packer, frame, mdps12):
-  values = mdps12
+  values = copy.copy(mdps12)
   values["CF_Mdps_ToiActive"] = 0
   values["CF_Mdps_ToiUnavail"] = 1
   values["CF_Mdps_MsgCount2"] = frame % 0x100
@@ -102,7 +104,7 @@ def create_mdps12(packer, frame, mdps12):
   return packer.make_can_msg("MDPS12", 2, values)
 
 def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc_live, scc11):
-  values = scc11
+  values = copy.copy(scc11)
   values["AliveCounterACC"] = frame // 2 % 0x10
   if not scc_live:
     values["MainMode_ACC"] = 1
@@ -113,7 +115,7 @@ def create_scc11(packer, frame, enabled, set_speed, lead_visible, scc_live, scc1
   return packer.make_can_msg("SCC11", 0, values)
 
 def create_scc12(packer, apply_accel, enabled, cnt, scc_live, scc12):
-  values = scc12
+  values = copy.copy(scc12)
   values["aReqRaw"] = apply_accel if enabled else 0 #aReqMax
   values["aReqValue"] = apply_accel if enabled else 0 #aReqMin
   values["CR_VSM_Alive"] = cnt
@@ -127,11 +129,11 @@ def create_scc12(packer, apply_accel, enabled, cnt, scc_live, scc12):
   return packer.make_can_msg("SCC12", 0, values)
 
 def create_scc13(packer, scc13):
-  values = scc13
+  values = copy.copy(scc13)
   return packer.make_can_msg("SCC13", 0, values)
 
 def create_scc14(packer, enabled, scc14):
-  values = scc14
+  values = copy.copy(scc14)
   if enabled:
     values["JerkUpperLimit"] = 3.2
     values["JerkLowerLimit"] = 0.1
@@ -164,7 +166,7 @@ def create_spas12(bus):
   return [1268, 0, b"\x00\x00\x00\x00\x00\x00\x00\x00", bus]
 
 def create_ems11(packer, ems11, enabled):
-  values = ems11
+  values = copy.copy(ems11)
   if enabled:
     values["VS"] = 0
   return packer.make_can_msg("values", 1, ems11)
