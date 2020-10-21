@@ -123,16 +123,16 @@ class CarController():
       lkas_active = False
 
     # Optima has blinker flash signal only
-    if self.car_fingerprint in [CAR.OPTIMA, CAR.OPTIMA_HEV]:
-      if CS.left_blinker_flash or CS.right_blinker_flash: 
-        self.turning_signal_timer = 100
+#    if self.car_fingerprint in [CAR.OPTIMA, CAR.OPTIMA_HEV]:
+#      if CS.left_blinker_flash or CS.right_blinker_flash: 
+#        self.turning_signal_timer = 100
     # Disable steering while turning blinker on and speed below 60 kph
-    elif CS.out.leftBlinker or CS.out.rightBlinker:
-      self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
-    if self.turning_indicator_alert: # set and clear by interface
-      lkas_active = 0
-    if self.turning_signal_timer > 0:
-      self.turning_signal_timer -= 1
+#    elif CS.out.leftBlinker or CS.out.rightBlinker:
+#      self.turning_signal_timer = 100  # Disable for 1.0 Seconds after blinker turned off
+#    if self.turning_indicator_alert: # set and clear by interface
+#      lkas_active = 0
+#    if self.turning_signal_timer > 0:
+#      self.turning_signal_timer -= 1
 
     if not lkas_active:
       apply_steer = 0

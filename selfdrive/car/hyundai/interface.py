@@ -288,15 +288,15 @@ class CarInterface(CarInterfaceBase):
     if self.mad_mode_enabled and not self.CC.longcontrol:
       ret.cruiseState.enabled = ret.cruiseState.available
     # some Optima only has blinker flash signal
-    if self.CP.carFingerprint == CAR.OPTIMA:
-      ret.leftBlinker = self.CS.leftBlinker = bool(self.CS.left_blinker_flash or self.CS.prev_left_blinker and self.CC.turning_signal_timer)
-      ret.rightBlinker = self.CS.rightBlinker = bool(self.CS.right_blinker_flash or self.CS.prev_right_blinker and self.CC.turning_signal_timer)
+#    if self.CP.carFingerprint == CAR.OPTIMA:
+#      ret.leftBlinker = self.CS.leftBlinker = bool(self.CS.left_blinker_flash or self.CS.prev_left_blinker and self.CC.turning_signal_timer)
+#      ret.rightBlinker = self.CS.rightBlinker = bool(self.CS.right_blinker_flash or self.CS.prev_right_blinker and self.CC.turning_signal_timer)
 
     # turning indicator alert logic
-    if (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < LANE_CHANGE_SPEED_MIN - 1.2:
-      self.CC.turning_indicator_alert = True 
-    else:
-      self.CC.turning_indicator_alert = False
+#    if (ret.leftBlinker or ret.rightBlinker or self.CC.turning_signal_timer) and ret.vEgo < LANE_CHANGE_SPEED_MIN - 1.2:
+#      self.CC.turning_indicator_alert = True 
+#    else:
+#      self.CC.turning_indicator_alert = False
 
     # LKAS button alert logic: reverse on/off
     if bool(self.CS.lkas_button) != bool(self.CS.prev_lkas_button) and self.CS.lkas_button != 7 != self.CS.prev_lkas_button and \
@@ -341,8 +341,8 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.steerTempUnavailable)
     if self.low_speed_alert and not self.CS.mdps_bus:
       events.add(EventName.belowSteerSpeed)
-    if self.CC.turning_indicator_alert:
-      events.add(EventName.turningIndicatorOn)
+#    if self.CC.turning_indicator_alert:
+#      events.add(EventName.turningIndicatorOn)
     if self.lkas_button_alert:
       events.add(EventName.lkasButtonOff)
     if self.mad_mode_enabled and not self.CC.longcontrol and EventName.pedalPressed in events.events:
