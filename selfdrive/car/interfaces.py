@@ -172,8 +172,8 @@ class CarStateBase:
   def update_blinker(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
     self.left_blinker_cnt = blinker_time if left_blinker_lamp else max(self.left_blinker_cnt - 1, 0)
     self.right_blinker_cnt = blinker_time if right_blinker_lamp else max(self.right_blinker_cnt - 1, 0)
-    return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0    
-  
+    return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
+
   @staticmethod
   def parse_gear_shifter(gear):
     return {'P': GearShifter.park, 'R': GearShifter.reverse, 'N': GearShifter.neutral,
