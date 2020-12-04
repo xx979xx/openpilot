@@ -12,7 +12,8 @@
 
 #include "wifi.hpp"
 #include "settings.hpp"
-#include "input_field.hpp"
+#include "widgets/toggle.hpp"
+#include "widgets/offroad_alerts.hpp"
 
 #include "common/params.h"
 #include "common/utilpp.h"
@@ -20,8 +21,8 @@
 
 ParamsToggle::ParamsToggle(QString param, QString title, QString description, QString icon_path, QWidget *parent): QFrame(parent) , param(param) {
   QHBoxLayout *hlayout = new QHBoxLayout;
-  QVBoxLayout *vlayout = new QVBoxLayout;
 
+  // Parameter image
   hlayout->addSpacing(25);
   if (icon_path.length()){
     QPixmap pix(icon_path);
@@ -34,42 +35,35 @@ ParamsToggle::ParamsToggle(QString param, QString title, QString description, QS
   }
   hlayout->addSpacing(25);
 
-  checkbox = new QCheckBox(title);
-  QLabel *label = new QLabel(description);
+  // Name of the parameter
+  QLabel *label = new QLabel(title);
   label->setWordWrap(true);
 
+  // toggle switch
+  Toggle* toggle_switch = new Toggle(this);
+  toggle_switch->setFixedSize(150, 100);
+
   // TODO: show descriptions on tap
-  //vlayout->addSpacing(50);
-  vlayout->addWidget(checkbox);
-  //vlayout->addWidget(label);
-  //vlayout->addSpacing(50);
-  hlayout->addLayout(vlayout);
+  hlayout->addWidget(label);
+  hlayout->addSpacing(50);
+  hlayout->addWidget(toggle_switch);
+  hlayout->addSpacing(20);
 
   setLayout(hlayout);
-
-  checkbox->setChecked(Params().read_db_bool(param.toStdString().c_str()));
+  if(Params().read_db_bool(param.toStdString().c_str())){
+    toggle_switch->togglePosition();
+  }
 
   setStyleSheet(R"(
-    QCheckBox {
-      font-size: 70px;
+    QLabel {
+      font-size: 50px;
     }
-    QCheckBox::indicator {
-      width: 100px;
-      height: 100px;
-    }
-    QCheckBox::indicator:unchecked {
-      image: url(../assets/offroad/circled-checkmark-empty.png);
-    }
-    QCheckBox::indicator:checked {
-      image: url(../assets/offroad/circled-checkmark.png);
-    }
-    QLabel { font-size: 40px }
     * {
       background-color: #114265;
     }
   )");
 
-  QObject::connect(checkbox, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
+  QObject::connect(toggle_switch, SIGNAL(stateChanged(int)), this, SLOT(checkboxClicked(int)));
 }
 
 void ParamsToggle::checkboxClicked(int state){
@@ -176,14 +170,17 @@ QWidget * developer_panel() {
 
   Params params = Params();
   std::string brand = params.read_db_bool("Passive") ? "dashcam" : "openpilot";
-  std::string os_version = util::read_file("/VERSION");
   std::vector<std::pair<std::string, std::string>> labels = {
     {"Version", brand + " v" + params.get("Version", false)},
-    {"OS Version", os_version},
     {"Git Branch", params.get("GitBranch", false)},
     {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
     {"Panda Firmware", params.get("PandaFirmwareHex", false)},
   };
+
+  std::string os_version = util::read_file("/VERSION");
+  if (os_version.size()) {
+    labels.push_back({"OS Version", "AGNOS " + os_version});
+  }
 
   for (auto l : labels) {
     QString text = QString::fromStdString(l.first + ": " + l.second);
@@ -192,17 +189,19 @@ QWidget * developer_panel() {
 
   QWidget *widget = new QWidget;
   widget->setLayout(main_layout);
+  widget->setStyleSheet(R"(
+    QLabel {
+      font-size: 50px;
+    }
+  )");
   return widget;
 }
 
-QWidget * network_panel() {
-  QVBoxLayout *main_layout = new QVBoxLayout;
-
-  main_layout->addWidget(new WifiUI());
-
-  QWidget *widget = new QWidget;
-  widget->setLayout(main_layout);
-  return widget;
+QWidget * network_panel(QWidget * parent) {
+  WifiUI *w = new WifiUI();
+  QObject::connect(w, SIGNAL(openKeyboard()), parent, SLOT(closeSidebar()));
+  QObject::connect(w, SIGNAL(closeKeyboard()), parent, SLOT(openSidebar()));
+  return w;
 }
 
 
@@ -212,7 +211,6 @@ void SettingsWindow::setActivePanel() {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
-
   // sidebar
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
   panel_layout = new QStackedLayout();
@@ -229,12 +227,21 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
   sidebar_layout->addWidget(close_button);
   QObject::connect(close_button, SIGNAL(released()), this, SIGNAL(closeSettings()));
 
+  // offroad alerts
+  alerts_widget = new OffroadAlert();
+  QObject::connect(alerts_widget, SIGNAL(closeAlerts()), this, SLOT(closeAlerts()));
+  panel_layout->addWidget(alerts_widget);
+
+  sidebar_alert_widget = new QPushButton("");//Should get text when it is visible
+  QObject::connect(sidebar_alert_widget, SIGNAL(released()), this, SLOT(openAlerts()));
+  sidebar_layout->addWidget(sidebar_alert_widget);
+
   // setup panels
   panels = {
-    {"device", device_panel()},
-    {"toggles", toggles_panel()},
     {"developer", developer_panel()},
-    {"network", network_panel()},
+    {"device", device_panel()},
+    {"network", network_panel(this)},
+    {"toggles", toggles_panel()},
   };
 
   for (auto &panel : panels) {
@@ -256,18 +263,84 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QWidget(parent) {
     QObject::connect(btn, SIGNAL(released()), this, SLOT(setActivePanel()));
   }
 
+  // We either show the alerts, or the developer panel
+  if (alerts_widget->show_alert){
+    panel_layout->setCurrentWidget(alerts_widget);
+  }
+
   QHBoxLayout *settings_layout = new QHBoxLayout();
   settings_layout->addSpacing(45);
-  settings_layout->addLayout(sidebar_layout);
+
+  sidebar_widget = new QWidget;
+  sidebar_widget->setLayout(sidebar_layout);
+  settings_layout->addWidget(sidebar_widget);
+
   settings_layout->addSpacing(45);
   settings_layout->addLayout(panel_layout);
   settings_layout->addSpacing(45);
-  setLayout(settings_layout);
 
+  setLayout(settings_layout);
   setStyleSheet(R"(
     * {
       color: white;
       font-size: 50px;
     }
   )");
+}
+
+// Refreshes the offroad alerts from the params folder and sets up the sidebar alerts widget.
+// The function gets called every time a user opens the settings page
+void SettingsWindow::refreshParams() {
+  alerts_widget->refresh();
+  if (!alerts_widget->show_alert){
+    sidebar_alert_widget->setFixedHeight(0);
+    panel_layout->setCurrentIndex(1);
+    return;
+  }
+
+  // Panel 0 contains the alerts or release notes.
+  panel_layout->setCurrentIndex(0);
+  sidebar_alert_widget->setFixedHeight(100);
+  sidebar_alert_widget->setStyleSheet(R"(
+    background-color: #114267;
+  )"); // light blue
+
+  // Check for alerts
+  int alerts = alerts_widget->alerts.size();
+  if (!alerts){
+    // There is a new release
+    sidebar_alert_widget->setText("UPDATE");
+    return;
+  }
+
+  // Check if there is an important alert
+  bool existsImportantAlert = false;
+  for (auto alert : alerts_widget->alerts){
+    if (alert.severity){
+      existsImportantAlert = true;
+    }
+  }
+
+  sidebar_alert_widget->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
+  if (existsImportantAlert){
+    sidebar_alert_widget->setStyleSheet(R"(
+      background-color: #661111;
+    )"); //dark red
+  }
+}
+
+void SettingsWindow::closeAlerts() {
+  panel_layout->setCurrentIndex(1);
+}
+
+void SettingsWindow::openAlerts() {
+  panel_layout->setCurrentIndex(0);
+}
+
+void SettingsWindow::closeSidebar() {
+  sidebar_widget->setVisible(false);
+}
+
+void SettingsWindow::openSidebar() {
+  sidebar_widget->setVisible(true);
 }
