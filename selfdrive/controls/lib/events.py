@@ -260,23 +260,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
-  EventName.invalidGiraffeToyota: {
-    ET.PERMANENT: Alert(
-      "Unsupported Giraffe Configuration",
-      "Visit comma.ai/tg",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-  },
-
-  EventName.whitePandaUnsupported: {
-    ET.PERMANENT: Alert(
-      "White Panda No Longer Supported",
-      "Upgrade to comma two or black panda",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
-    ET.NO_ENTRY: NoEntryAlert("Unsupported Hardware"),
-  },
-
   EventName.invalidLkasSetting: {
     ET.PERMANENT: Alert(
       "Stock LKAS is turned on",
@@ -473,11 +456,15 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "TAKE CONTROL",
       "Turn Exceeds Steering Limit",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1., 1., 1.),
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, .1, .1, .1),
   },
 
   EventName.fanMalfunction: {
     ET.PERMANENT: NormalPermanentAlert("Fan Malfunction", "Contact Support"),
+  },
+
+  EventName.cameraMalfunction: {
+    ET.PERMANENT: NormalPermanentAlert("Camera Malfunction", "Contact Support"),
   },
 
   EventName.turningIndicatorOn: {
@@ -485,16 +472,15 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "TAKE CONTROL",
       "Steer Unavailable while Turning",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .0, .0, .2),
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .2),
   },
 
   EventName.lkasButtonOff: {
     ET.WARNING: Alert(
-      "lkasButtonOff",
-      "LKAS button off",
-      "",
-      AlertStatus.userPrompt, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .1),
+      "TAKE CONTROL",
+      "Steer Disabled by LKAS button",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.none, 0., .1, .2),
   },
 
   EventName.autoLaneChange: {

@@ -8,6 +8,7 @@ import numpy as np
 
 from opendbc import DBC_PATH
 
+from cereal import car
 from common.realtime import Ratekeeper
 from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
@@ -112,12 +113,12 @@ class Plant():
       Plant.logcan = messaging.pub_sock('can')
       Plant.sendcan = messaging.sub_sock('sendcan')
       Plant.model = messaging.pub_sock('model')
-      Plant.frame_pub = messaging.pub_sock('frame')
+      Plant.front_frame = messaging.pub_sock('frontFrame')
       Plant.live_params = messaging.pub_sock('liveParameters')
       Plant.live_location_kalman = messaging.pub_sock('liveLocationKalman')
       Plant.health = messaging.pub_sock('health')
       Plant.thermal = messaging.pub_sock('thermal')
-      Plant.driverState = messaging.pub_sock('driverState')
+      Plant.dMonitoringState = messaging.pub_sock('dMonitoringState')
       Plant.cal = messaging.pub_sock('liveCalibration')
       Plant.controls_state = messaging.sub_sock('controlsState')
       Plant.plan = messaging.sub_sock('plan')
@@ -162,7 +163,7 @@ class Plant():
   def close(self):
     Plant.logcan.close()
     Plant.model.close()
-    Plant.frame_pub.close()
+    Plant.front_frame.close()
     Plant.live_params.close()
     Plant.live_location_kalman.close()
 
@@ -369,12 +370,12 @@ class Plant():
     live_parameters.liveParameters.stiffnessFactor = 1.0
     Plant.live_params.send(live_parameters.to_bytes())
 
-    driver_state = messaging.new_message('driverState')
-    driver_state.driverState.faceOrientation = [0.] * 3
-    driver_state.driverState.facePosition = [0.] * 2
-    Plant.driverState.send(driver_state.to_bytes())
+    dmon_state = messaging.new_message('dMonitoringState')
+    dmon_state.dMonitoringState.isDistracted = False
+    Plant.dMonitoringState.send(dmon_state.to_bytes())
 
     health = messaging.new_message('health')
+    health.health.safetyModel = car.CarParams.SafetyModel.hondaNidec
     health.health.controlsAllowed = True
     Plant.health.send(health.to_bytes())
 
@@ -393,7 +394,7 @@ class Plant():
     if publish_model and self.frame % 5 == 0:
       md = messaging.new_message('model')
       cal = messaging.new_message('liveCalibration')
-      fp = messaging.new_message('frame')
+      fp = messaging.new_message('frontFrame')
       md.model.frameId = 0
       for x in [md.model.path, md.model.leftLane, md.model.rightLane]:
         x.points = [0.0]*50
@@ -425,7 +426,7 @@ class Plant():
       # fake values?
       Plant.model.send(md.to_bytes())
       Plant.cal.send(cal.to_bytes())
-      Plant.frame_pub.send(fp.to_bytes())
+      Plant.front_frame.send(fp.to_bytes())
 
     Plant.logcan.send(can_list_to_can_capnp(can_msgs))
 
