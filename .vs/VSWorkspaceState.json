@@ -1,0 +1,11 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\common",
+    "\\selfdrive",
+    "\\selfdrive\\car",
+    "\\selfdrive\\car\\hyundai"
+  ],
+  "SelectedNode": "\\selfdrive\\car\\hyundai\\values.py",
+  "PreviewInSolutionExplorer": false
+}
