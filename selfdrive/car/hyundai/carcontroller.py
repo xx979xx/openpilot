@@ -38,11 +38,8 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 
   # initialize to no line visible
   sys_state = 1
-  if left_lane and right_lane or sys_warning:  #HUD alert only display when LKAS status is active
-    if enabled or sys_warning:
-      sys_state = 3
-    else:
-      sys_state = 4
+  if left_lane and right_lane or sys_warning:  # HUD alert only display when LKAS status is active
+    sys_state = 3 if enabled or sys_warning else 4
   elif left_lane:
     sys_state = 5
   elif right_lane:
@@ -61,10 +58,11 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
-    self.car_fingerprint = CP.carFingerprint
+    self.p = SteerLimitParams(CP)
     self.packer = CANPacker(dbc_name)
-    self.accel_steady = 0
+
     self.apply_steer_last = 0
+    self.car_fingerprint = CP.carFingerprint
     self.steer_rate_limited = False
     self.lkas11_cnt = 0
     self.scc12_cnt = 0
@@ -73,14 +71,13 @@ class CarController():
     self.turning_signal_timer = 0
     self.longcontrol = CP.openpilotLongitudinalControl
     self.scc_live = not CP.radarOffCan
+    self.accel_steady = 0
     if CP.spasEnabled:
       self.en_cnt = 0
       self.apply_steer_ang = 0.0
       self.en_spas = 3
       self.mdps11_stat_last = 0
       self.spas_always = False
-
-    self.p = SteerLimitParams(CP)
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart, set_speed, lead_visible):
@@ -132,8 +129,8 @@ class CarController():
     self.apply_accel_last = apply_accel
     self.apply_steer_last = apply_steer
 
-    sys_warning, sys_state, left_lane_warning, right_lane_warning =\
-      process_hud_alert(lkas_active, self.car_fingerprint, visual_alert,
+    sys_warning, sys_state, left_lane_warning, right_lane_warning = \
+      process_hud_alert(enabled, self.car_fingerprint, visual_alert,
                         left_lane, right_lane, left_lane_depart, right_lane_depart)
 
     clu11_speed = CS.clu11["CF_Clu_Vanz"]
@@ -216,7 +213,7 @@ class CarController():
 
     # 20 Hz LFA MFA message
     if frame % 5 == 0 and self.car_fingerprint in FEATURES["send_lfa_mfa"]:
-      can_sends.append(create_lfa_mfa(self.packer, frame, lkas_active))
+      can_sends.append(create_lfa_mfa(self.packer, frame, enabled))
 
     if CS.spas_enabled:
       if CS.mdps_bus:
