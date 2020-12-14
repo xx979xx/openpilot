@@ -408,6 +408,14 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00JFA LKAS AT USA LHD 1.00 1.02 95895-D5000 h31'],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW'],
   },
+  CAR.SPORTAGE: {
+    (Ecu.engine, 0x7e0, None): [b'\xf1\x81606G2051\x00\x00\x00\x00\x00\x00\x00\x00'],
+    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00QL  MFC  AT USA LHD 1.00 1.05 99211-F1000 181204'],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x87KKKBBH312096U43Z\x9a\xaa\xaa\xaax\x89\x98\x99\x98\x88\x89\x88effV\x98\x88\xbf\xffw\xff\x8f\xf6\x19\x19\xf1\x816T6G4051\x00\x00\xf1\x006T6J0_C2\x00\x006T6G4051\x00\x00TQL2G24NH0;',
+      b'\xd5\x1e\xc7',
+    ],
+  },
   CAR.OPTIMA_HEV: {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00DEhe SCC H-CUP      1.01 1.02 96400-G5100         ',],
     (Ecu.engine, 0x7e0, None): [b'\xf1\x816H6F4051\x00\x00\x00\x00\x00\x00\x00\x00',],
