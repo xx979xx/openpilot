@@ -104,6 +104,8 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     turningIndicatorOn @95;
     lkasButtonOff @96;
 
+    startupOneplus @82;
+
     gasUnavailableDEPRECATED @3;
     dataNeededDEPRECATED @16;
     modelCommIssueDEPRECATED @27;
@@ -115,8 +117,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     invalidGiraffeHondaDEPRECATED @49;
     invalidGiraffeToyotaDEPRECATED @60;
     whitePandaUnsupportedDEPRECATED @81;
-    startupGreyPandaDEPRECATED @82;
-    canErrorPersistentDEPRECATED @83;
+    commIssueWarningDEPRECATED @83;
     focusRecoverActiveDEPRECATED @86;
     neosUpdateRequiredDEPRECATED @88;
     modelLagWarningDEPRECATED @93;
@@ -401,6 +402,9 @@ struct CarParams {
   steerRateCost @33 :Float32; # Lateral MPC cost on steering rate
   steerControlType @34 :SteerControlType;
   radarOffCan @35 :Bool; # True when radar objects aren't visible on CAN
+  minSpeedCan @51 :Float32; # Minimum vehicle speed from CAN (below this value drops to 0)
+  stoppingBrakeRate @52 :Float32; # brake_travel/s while trying to stop
+  startingBrakeRate @53 :Float32; # brake_travel/s while releasing on restart
 
   steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
@@ -413,10 +417,10 @@ struct CarParams {
   communityFeature @46: Bool;  # true if a community maintained feature is detected
   fingerprintSource @49: FingerprintSource;
   networkLocation @50 :NetworkLocation;  # Where Panda/C2 is integrated into the car's CAN network
-  mdpsBus @51: Int8;
-  sasBus @52: Int8;
-  sccBus @53: Int8;
-  spasEnabled @54: Bool;
+  mdpsBus @54: Int8;
+  sasBus @55: Int8;
+  sccBus @56: Int8;
+  spasEnabled @57: Bool;
 
   struct LateralParams {
     torqueBP @0 :List(Int32);

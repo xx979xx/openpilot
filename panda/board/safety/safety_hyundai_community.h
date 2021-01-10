@@ -6,6 +6,7 @@ int car_SCC_live = 0;
 int OP_EMS_live = 0;
 int HKG_mdps_bus = -1;
 int HKG_scc_bus = -1;
+int cruise_button_prev;
 const CanMsg HYUNDAI_COMMUNITY_TX_MSGS[] = {
   {832, 0, 8}, {832, 1, 8}, // LKAS11 Bus 0, 1
   {1265, 0, 4}, {1265, 1, 4}, {1265, 2, 4}, // CLU11 Bus 0, 1, 2
@@ -132,7 +133,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       // first byte
       int cruise_button = (GET_BYTES_04(to_push) & 0x7);
       // enable on both accel and decel buttons falling edge
-      if (!cruise_button && (cruise_engaged_prev == 1 || cruise_engaged_prev == 2)) {
+      if (!cruise_button && (cruise_button_prev == 1 || cruise_button_prev == 2)) {
         controls_allowed = 1;
         puts("  non-SCC w/o long control: controls allowed"); puts("\n");
       }
@@ -141,7 +142,7 @@ static int hyundai_community_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
         if (controls_allowed) {puts("  non-SCC w/o long control: controls not allowed"); puts("\n");}
         controls_allowed = 0;
       }
-      cruise_engaged_prev = cruise_button;
+      cruise_button_prev = cruise_button;
     }
     // exit controls on rising edge of gas press for cars with long control
     if (addr == 608 && OP_SCC_live && bus == 0) { // EMS16
