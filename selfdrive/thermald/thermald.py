@@ -333,7 +333,8 @@ def thermald_thread():
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 
     panda_signature = params.get("PandaFirmware")
-    startup_conditions["fw_version_match"] = (panda_signature is None) or (panda_signature == FW_SIGNATURE) or ("WHITE_PANDA" in os.environ)  # don't show alert is no panda is connected (None)
+    white_panda = pandaState.pandaState.pandaType == log.PandaState.PandaType.whitePanda
+    startup_conditions["fw_version_match"] = (panda_signature is None) or (panda_signature == FW_SIGNATURE) and not white_panda # don't show alert is no panda is connected (None)
     set_offroad_alert_if_changed("Offroad_PandaFirmwareMismatch", (not startup_conditions["fw_version_match"]))
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
