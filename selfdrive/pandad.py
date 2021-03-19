@@ -88,11 +88,10 @@ def update_panda():
     fw_signature.hex(),
   ))
 
-  white_panda = panda.is_white() or panda.get_version() == panda.HW_TYPE_UNKNOWN
-  if white_panda:
-    os.environ['WHITE_PANDA'] = '1'
+  if panda.is_white() or panda.get_version() == panda.HW_TYPE_UNKNOWN:
+    return
 
-  if panda.bootstub or panda_signature != fw_signature and not white_panda:
+  if panda.bootstub or panda_signature != fw_signature:
     cloudlog.info("Panda firmware out of date, update required")
     panda.flash(fw_fn)
     cloudlog.info("Done flashing")
