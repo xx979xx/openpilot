@@ -30,7 +30,6 @@ STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
-WHITE_PANDA = "WHITE_PANDA" in os.environ
 IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "logcatd", "proclogd", "clocksd", "updated", "timezoned"])
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -55,7 +54,7 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['ubloxRaw', 'driverCameraState', 'managerState'] if SIMULATION else ['ubloxRaw'] if WHITE_PANDA else None
+      ignore = ['ubloxRaw', 'driverCameraState', 'managerState'] if SIMULATION  None
       self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration', 'ubloxRaw',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'roadCameraState', 'driverCameraState', 'managerState', 'liveParameters', 'radarState'], ignore_alive=ignore)
@@ -145,7 +144,7 @@ class Controls:
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
-
+    white_panda = self.sm['pandaState'].pandaType == PandaType.whitePanda
   def update_events(self, CS):
     """Compute carEvents from carState"""
 
@@ -213,7 +212,8 @@ class Controls:
       self.events.add(EventName.radarFault)
     elif not self.sm.valid['liveParameters']:
       self.events.add(EventName.vehicleModelInvalid)
-    elif not self.sm.all_alive_and_valid():
+    elif not self.sm.all_alive_and_valid() and not white_panda or \
+    [i for i in self.sm.alive if self.sm.alive[i] is False] != ['ubloxRaw']:
       self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
         cloudlog.error(f"commIssue - valid: {self.sm.valid} - alive: {self.sm.alive}")
@@ -237,7 +237,7 @@ class Controls:
 
     # TODO: fix simulator
     if not SIMULATION:
-      if not NOSENSOR and not WHITE_PANDA:
+      if not NOSENSOR and not white_panda:
         if not self.sm.alive['ubloxRaw'] and (self.sm.frame > 10. / DT_CTRL):
           self.events.add(EventName.gpsMalfunction)
         elif not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and not TICI:
