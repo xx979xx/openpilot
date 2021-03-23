@@ -144,7 +144,7 @@ class Controls:
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.prof = Profiler(False)  # off by default
-    white_panda = self.sm['pandaState'].pandaType == PandaType.whitePanda
+
   def update_events(self, CS):
     """Compute carEvents from carState"""
 
@@ -212,7 +212,7 @@ class Controls:
       self.events.add(EventName.radarFault)
     elif not self.sm.valid['liveParameters']:
       self.events.add(EventName.vehicleModelInvalid)
-    elif not self.sm.all_alive_and_valid() and not white_panda or \
+    elif not self.sm.all_alive_and_valid() and \
     [i for i in self.sm.alive if self.sm.alive[i] is False] != ['ubloxRaw']:
       self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
@@ -237,7 +237,7 @@ class Controls:
 
     # TODO: fix simulator
     if not SIMULATION:
-      if not NOSENSOR and not white_panda:
+      if not NOSENSOR or True:
         if not self.sm.alive['ubloxRaw'] and (self.sm.frame > 10. / DT_CTRL):
           self.events.add(EventName.gpsMalfunction)
         elif not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and not TICI:
