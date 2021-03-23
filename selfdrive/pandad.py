@@ -88,8 +88,7 @@ def update_panda():
     fw_signature.hex(),
   ))
 
-  if panda.is_white() or panda.get_version() == panda.HW_TYPE_UNKNOWN:
-    return
+  return
 
   if panda.bootstub or panda_signature != fw_signature:
     cloudlog.info("Panda firmware out of date, update required")
