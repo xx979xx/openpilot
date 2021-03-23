@@ -2,10 +2,10 @@ from cereal import car
 from common.realtime import DT_CTRL
 from common.numpy_fast import clip
 from selfdrive.car import apply_std_steer_torque_limits
-from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfa_mfa, \
+from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfahda_mfc, \
                                              create_scc11, create_scc12,  create_scc13, create_scc14, \
                                              create_mdps12, create_spas11, create_spas12, create_ems11
-from selfdrive.car.hyundai.values import Buttons, SteerLimitParams, CAR, FEATURES
+from selfdrive.car.hyundai.values import Buttons, CarControllerParams, CAR, FEATURES
 from opendbc.can.packer import CANPacker
 from selfdrive.config import Conversions as CV
 
@@ -58,7 +58,7 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
-    self.p = SteerLimitParams(CP)
+    self.p = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
 
     self.apply_steer_last = 0
@@ -109,7 +109,7 @@ class CarController():
     spas_active = CS.spas_enabled and enabled and (self.spas_always or CS.out.vEgo < 7.0) # 25km/h
 
     # disable if steer angle reach 90 deg, otherwise mdps fault in some models
-    lkas_active = enabled and abs(CS.out.steeringAngle) < 90. and not spas_active
+    lkas_active = enabled and abs(CS.out.steeringAngleDeg) < CS.CP.maxSteeringAngleDeg and not spas_active
 
     # fix for Genesis hard fault at low speed
     if CS.out.vEgo < 60 * CV.KPH_TO_MS and self.car_fingerprint == CAR.GENESIS and not CS.mdps_bus:
@@ -213,7 +213,7 @@ class CarController():
 
     # 20 Hz LFA MFA message
     if frame % 5 == 0 and self.car_fingerprint in FEATURES["send_lfa_mfa"]:
-      can_sends.append(create_lfa_mfa(self.packer, frame, enabled))
+      can_sends.append(create_lfahda_mfc(self.packer, enabled))
 
     if CS.spas_enabled:
       if CS.mdps_bus:

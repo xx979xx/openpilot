@@ -4,7 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.hyundai.values import CAR, Buttons
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
-from selfdrive.controls.lib.pathplanner import LANE_CHANGE_SPEED_MIN
+from selfdrive.controls.lib.lateral_planner import LANE_CHANGE_SPEED_MIN
 from common.params import Params
 
 GearShifter = car.CarState.GearShifter
@@ -38,6 +38,12 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 0.5
     ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 1.
+    ret.maxSteeringAngleDeg = 90.
+
+    eps_modified = False
+    for fw in car_fw:
+      if fw.ecu == "eps" and b"," in fw.fwVersion:
+        eps_modified = True
 
     # genesis
     if candidate == CAR.GENESIS:
@@ -97,7 +103,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.75 * 1.15
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
+      if eps_modified:
+        ret.maxSteeringAngleDeg = 1000.
     elif candidate in [CAR.ELANTRA, CAR.ELANTRA_GT_I30]:
       ret.mass = 1275. + STD_CARGO_KG
       ret.wheelbase = 2.7
@@ -122,7 +130,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate in [CAR.IONIQ_EV, CAR.IONIQ_HEV, CAR.IONIQ_EV_2020]:
+    elif candidate in [CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_EV_2020]:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1490. + STD_CARGO_KG  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
       ret.wheelbase = 2.7
@@ -192,7 +200,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.CEED:
-      ret.mass = 1450. + STD_CARGO_KG
+      ret.mass = 1350. + STD_CARGO_KG
       ret.wheelbase = 2.65
       ret.steerRatio = 13.75
       tire_stiffness_factor = 0.5
@@ -338,7 +346,7 @@ class CarInterface(CarInterfaceBase):
 
     if self.CC.longcontrol and self.CS.cruise_unavail:
       events.add(EventName.brakeUnavailable)
-    if abs(ret.steeringAngle) > 90. and EventName.steerTempUnavailable not in events.events:
+    if abs(ret.steeringAngleDeg) > 90. and EventName.steerTempUnavailable not in events.events:
       events.add(EventName.steerTempUnavailable)
     if self.low_speed_alert and not self.CS.mdps_bus:
       events.add(EventName.belowSteerSpeed)

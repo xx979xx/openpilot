@@ -53,8 +53,8 @@ class CarState(CarStateBase):
 
     ret.standstill = ret.vEgoRaw < 0.1
 
-    ret.steeringAngle = cp_sas.vl["SAS11"]['SAS_Angle']
-    ret.steeringRate = cp_sas.vl["SAS11"]['SAS_Speed']
+    ret.steeringAngleDeg = cp_sas.vl["SAS11"]['SAS_Angle']
+    ret.steeringRateDeg = cp_sas.vl["SAS11"]['SAS_Speed']
     ret.yawRate = cp.vl["ESP12"]['YAW_RATE']
     ret.leftBlinker, ret.rightBlinker = self.update_blinker(50, cp.vl["CGW1"]['CF_Gway_TurnSigLh'],
                                                             cp.vl["CGW1"]['CF_Gway_TurnSigRh'])
@@ -65,12 +65,18 @@ class CarState(CarStateBase):
     ret.steerWarning = self.mdps_error_cnt > 10 #cp_mdps.vl["MDPS12"]['CF_Mdps_ToiUnavail'] != 0
 
     # cruise state
-    ret.cruiseState.enabled = (cp_scc.vl["SCC12"]['ACCMode'] != 0) if not self.no_radar else \
-                                      cp.vl["LVR12"]['CF_Lvr_CruiseSet'] != 0
-    ret.cruiseState.available = (cp_scc.vl["SCC11"]["MainMode_ACC"] != 0) if not self.no_radar else \
-                                      cp.vl['EMS16']['CRUISE_LAMP_M'] != 0
-    ret.cruiseState.standstill = cp_scc.vl["SCC11"]['SCCInfoDisplay'] == 4. if not self.no_radar else False
-    self.is_set_speed_in_mph = bool(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
+    if self.CP.openpilotLongitudinalControl:
+      ret.cruiseState.available = cp.vl["TCS13"]['ACCEnable'] == 0
+      ret.cruiseState.enabled = cp.vl["TCS13"]['ACC_REQ'] == 1
+      ret.cruiseState.standstill = cp.vl["TCS13"]['StandStill'] == 1
+    else:
+      ret.cruiseState.available = cp.vl["SCC11"]['MainMode_ACC'] == 1 if not self.no_radar else \
+                                        cp.vl['EMS16']['CRUISE_LAMP_M'] != 0
+      ret.cruiseState.enabled = cp.vl["SCC12"]['ACCMode'] != 0 if not self.no_radar else \
+                                        cp.vl["LVR12"]['CF_Lvr_CruiseSet'] != 0
+      ret.cruiseState.standstill = cp.vl["SCC11"]['SCCInfoDisplay'] == 4. if not self.no_radar else False
+      self.is_set_speed_in_mph = bool(cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"])
+
     if ret.cruiseState.enabled:
       speed_conv = CV.MPH_TO_MS if self.is_set_speed_in_mph else CV.KPH_TO_MS
       ret.cruiseState.speed = cp_scc.vl["SCC11"]['VSetDis'] * speed_conv if not self.no_radar else \
@@ -164,7 +170,9 @@ class CarState(CarStateBase):
     self.scc11 = copy.copy(cp_scc.vl["SCC11"])
     self.scc12 = copy.copy(cp_scc.vl["SCC12"])
     self.mdps12 = copy.copy(cp_mdps.vl["MDPS12"])
-    self.park_brake = cp.vl["CGW1"]['CF_Gway_ParkBrakeSw']
+    self.park_brake = cp.vl["TCS13"]['PBRAKE_ACT'] == 1
+    self.brake_hold = cp.vl["TCS15"]['AVH_LAMP'] == 2 # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
+    self.brake_error = cp.vl["TCS13"]['ACCEnable'] != 0 # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
     self.steer_state = cp_mdps.vl["MDPS12"]['CF_Mdps_ToiActive'] #0 NOT ACTIVE, 1 ACTIVE
     self.cruise_unavail = cp.vl["TCS13"]['CF_VSM_Avail'] != 1
     self.lead_distance = cp_scc.vl["SCC11"]['ACC_ObjDist'] if not self.no_radar else 0
@@ -223,11 +231,15 @@ class CarState(CarStateBase):
       ("CF_Clu_AliveCnt1", "CLU11", 0),
 
       ("ACCEnable", "TCS13", 0),
+      ("ACC_REQ", "TCS13", 0),
       ("BrakeLight", "TCS13", 0),
       ("DriverBraking", "TCS13", 0),
       ("CF_VSM_Avail", "TCS13", 0),
+      ("StandStill", "TCS13", 0),
+      ("PBRAKE_ACT", "TCS13", 0),
 
       ("ESC_Off_Step", "TCS15", 0),
+      ("AVH_LAMP", "TCS15", 0),
 
       ("CF_Lvr_GearInf", "LVR11", 0),        # Transmission Gear (0 = N or P, 1-8 = Fwd, 14 = Rev)
 
@@ -371,7 +383,8 @@ class CarState(CarStateBase):
         ("FCA_CmdAct", "FCA11", 0),
         ("CF_VSM_Warn", "FCA11", 0),
       ]
-      checks += [("FCA11", 50)]
+      if not CP.openpilotLongitudinalControl:
+        checks += [("FCA11", 50)]
 
     if CP.carFingerprint in [CAR.SANTA_FE]:
       checks.remove(("TCS13", 50))
@@ -517,7 +530,7 @@ class CarState(CarStateBase):
       ("CF_Lkas_MsgCount", "LKAS11", 0),
       ("CF_Lkas_FusionState", "LKAS11", 0),
       ("CF_Lkas_FcwOpt_USM", "LKAS11", 0),
-      ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0)
+      ("CF_Lkas_LdwsOpt_USM", "LKAS11", 0),
     ]
 
     checks = [
