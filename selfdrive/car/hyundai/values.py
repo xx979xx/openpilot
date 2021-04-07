@@ -451,6 +451,9 @@ FW_VERSIONS = {
       b'\xf1\x00DEE MFC  AT USA LHD 1.00 1.00 99211-Q4000 191211',
     ],
   },
+  CAR.CADENZA: {
+    (Ecu.eps, 0x7d4, None): [b'\xf1\000YG  MDPS C 1.00 1.01 56310F6350\000 4YG7C101',],
+  },
 }
 
 CHECKSUM = {
